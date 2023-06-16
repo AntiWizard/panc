@@ -7,3 +7,4 @@ djangorestframework==3.14.0
 redis==4.5.5
 requests==2.31.0
 django-environ==0.10.0
+web3==6.4.0
