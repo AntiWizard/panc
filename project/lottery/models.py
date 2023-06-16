@@ -36,6 +36,17 @@ class Ticket(AbstractBaseModelWithUUidAsPk):
         return self.id + " > " + self.round.number
 
 
+class RoundWinnerDetail(models.Model):
+    count = models.IntegerField()
+    type = models.CharField(choices=WinnerType.CHOICES, default=WinnerType.CHOICES)
+    round = models.ForeignKey(to=RoundInfo, on_delete=models.CASCADE)
+    total_amount_by_type = models.FloatField()
+    ratio = models.FloatField()
+
+    def __str__(self):
+        return self.round.number
+
+
 class RoundWinners(models.Model):
     winner_count = models.IntegerField(default=0)  # 1 >= x >= 100
     winner_ids = fields.ArrayField(base_field=models.UUIDField(), default=list)

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from lottery.models import RoundInfo, Ticket, RoundWinners
+from lottery.models import RoundInfo, Ticket, RoundWinners, RoundWinnerDetail
 
 
 @admin.register(RoundInfo)
@@ -16,6 +16,13 @@ class TicketAdmin(admin.ModelAdmin):
     list_display = ['id', 'round', 'user', 'amount', 'number', 'is_active', 'created_at']
     search_fields = ['user', 'round']
     list_filter = ['is_active']
+
+
+@admin.register(RoundWinnerDetail)
+class RoundWinnerDetailAdmin(admin.ModelAdmin):
+    list_display = ['id', 'count', 'round', 'type', 'total_amount_by_type']
+    search_fields = ['round', 'type']
+    list_filter = ['type']
 
 
 @admin.register(RoundWinners)
