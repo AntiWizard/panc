@@ -20,7 +20,7 @@ class TicketAdmin(admin.ModelAdmin):
 
 @admin.register(RoundWinnerDetail)
 class RoundWinnerDetailAdmin(admin.ModelAdmin):
-    list_display = ['id', 'count', 'round', 'type', 'total_amount_by_type']
+    list_display = ['id', 'count', 'round', 'type', 'total_amount']
     search_fields = ['round', 'type']
     list_filter = ['type']
 

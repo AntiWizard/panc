@@ -40,7 +40,7 @@ class RoundWinnerDetail(models.Model):
     count = models.IntegerField()
     type = models.CharField(choices=WinnerType.CHOICES, default=WinnerType.CHOICES)
     round = models.ForeignKey(to=RoundInfo, on_delete=models.CASCADE)
-    total_amount_by_type = models.FloatField()
+    total_amount = models.FloatField()
     ratio = models.FloatField()
 
     def __str__(self):
