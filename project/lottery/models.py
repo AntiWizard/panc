@@ -15,7 +15,7 @@ class RoundInfo(models.Model):
     previous_round = models.ForeignKey(to='self', null=True, blank=True, default=None, on_delete=models.CASCADE)
     is_done = models.BooleanField(default=False)
 
-    lock_at = models.DateTimeField()
+    lock_at = models.DateTimeField(default=None, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
 
     def __str__(self):
@@ -37,10 +37,10 @@ class Ticket(AbstractBaseModelWithUUidAsPk):
 
 
 class RoundWinnerDetail(models.Model):
-    count = models.IntegerField()
+    count = models.IntegerField(default=0)
     type = models.CharField(choices=WinnerType.CHOICES, default=WinnerType.CHOICES)
     round = models.ForeignKey(to=RoundInfo, on_delete=models.CASCADE)
-    total_amount = models.FloatField()
+    total_amount = models.FloatField(default=0)
     ratio = models.FloatField()
 
     def __str__(self):

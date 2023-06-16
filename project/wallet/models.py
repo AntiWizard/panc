@@ -65,7 +65,7 @@ class TransactionLog(AbstractBaseModelWithUUidAsPk):
     wallet = models.ForeignKey(to=Wallet, on_delete=models.DO_NOTHING)
     amount = models.FloatField()
     balance_after = models.FloatField(default=0)
-    temp_transaction_ref = models.CharField(max_length=36)
+    temp_transaction_ref = models.CharField(max_length=36, null=True, blank=True, default=None)
     transaction_type = models.CharField(choices=TransactionType.CHOICES, default=TransactionType.TRANSACTION)
 
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
