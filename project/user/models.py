@@ -17,6 +17,9 @@ class User(AbstractBaseModelWithUUidAsPk):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
 
+    def __str__(self):
+        return self.id
+
 
 class UserSession(models.Model):
     session_id = models.CharField(max_length=10, unique=True)
@@ -27,3 +30,6 @@ class UserSession(models.Model):
     last_login = models.DateTimeField(default=timezone.now)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
+
+    def __str__(self):
+        return self.id

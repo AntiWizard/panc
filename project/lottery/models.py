@@ -1,4 +1,5 @@
 from django.contrib.postgres import fields
+from django.core.validators import MaxLengthValidator, MinLengthValidator
 from django.db import models
 
 from lottery.constants import WinnerType
@@ -6,9 +7,10 @@ from user.models import AbstractBaseModelWithUUidAsPk, User
 
 
 class RoundInfo(models.Model):
+    number = models.IntegerField(default=1, unique=True)
     goal = models.CharField(max_length=128, editable=False)  # hash
-    burn_amount = models.FloatField(default=0.0)
     total_amount = models.FloatField(default=0.0)
+    burn_amount = models.FloatField(default=0.0)
     ticket_count = models.IntegerField(default=0)
     previous_round = models.ForeignKey(to='self', null=True, blank=True, default=None, on_delete=models.CASCADE)
     is_done = models.BooleanField(default=False)
@@ -16,15 +18,22 @@ class RoundInfo(models.Model):
     lock_at = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
 
+    def __str__(self):
+        return self.number
+
 
 class Ticket(AbstractBaseModelWithUUidAsPk):
-    round_number = models.ForeignKey(to=RoundInfo, on_delete=models.CASCADE)
+    round = models.ForeignKey(to=RoundInfo, on_delete=models.CASCADE)
     user = models.ForeignKey(to=User, on_delete=models.DO_NOTHING)
     amount = models.FloatField()
-    number = models.CharField(max_length=6, editable=False)  # validation
+    number = models.CharField(max_length=6, editable=False,
+                              validators=[MaxLengthValidator(6), MinLengthValidator(6)])
     is_active = models.BooleanField(default=True)
 
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
+
+    def __str__(self):
+        return self.id + " > " + self.round.number
 
 
 class RoundWinners(models.Model):
@@ -33,3 +42,6 @@ class RoundWinners(models.Model):
     type = models.CharField(choices=WinnerType.CHOICES, default=WinnerType.CHOICES)
     round = models.ForeignKey(to=RoundInfo, on_delete=models.DO_NOTHING)
     is_processed = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.round.number

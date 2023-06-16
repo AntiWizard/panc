@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import UniqueConstraint
 
 from user.models import AbstractBaseModelWithUUidAsPk, User
 from wallet.constants import WalletType, TransactionStatus, CurrencyType, TransactionType
@@ -9,6 +10,12 @@ class Wallet(AbstractBaseModelWithUUidAsPk):  # wallet site
     wallet_type = models.CharField(choices=WalletType.CHOICES, default=WalletType.USD)
     balance = models.FloatField(default=0.0)
     flagged_wallet = models.BooleanField(default=False, blank=False, null=False)
+
+    def __str__(self):
+        return self.identifier
+
+    class Meta:
+        UniqueConstraint('identifier', 'wallet_type', name="unique_identifier_wallet_type")
 
 
 class CashOutRequest(models.Model):
