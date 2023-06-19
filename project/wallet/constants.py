@@ -38,9 +38,11 @@ class TransactionType:
     CASHOUT = 'cashout'
     TRANSACTION = 'transaction'
     LOTTERY = 'lottery'
+    BURN = 'burn'
 
     CHOICES = (
         (CASHOUT, 'cashout'),
         (TRANSACTION, 'transaction'),
-        (LOTTERY, 'lottery')
+        (LOTTERY, 'lottery'),
+        (BURN, 'burn')
     )

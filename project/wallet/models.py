@@ -8,7 +8,7 @@ from wallet.constants import WalletType, TransactionStatus, CurrencyType, Transa
 class Wallet(AbstractBaseModelWithUUidAsPk):  # wallet site
     identifier = models.CharField(max_length=42)  # wallet_address user / owner
     wallet_type = models.CharField(choices=WalletType.CHOICES, default=WalletType.USD)
-    balance = models.FloatField(default=0.0)
+    balance = models.DecimalField(default=0.0, max_digits=20, decimal_places=5)
     flagged_wallet = models.BooleanField(default=False, blank=False, null=False)
 
     def __str__(self):
@@ -20,8 +20,8 @@ class Wallet(AbstractBaseModelWithUUidAsPk):  # wallet site
 
 class CashOutRequest(models.Model):
     user = models.ForeignKey(to=User, on_delete=models.DO_NOTHING)
-    type = models.CharField(choices=WalletType.CHOICES, default=WalletType.USD)
-    amount = models.FloatField()
+    type = models.CharField(choices=CurrencyType.CHOICES, default=CurrencyType.USD)
+    amount = models.DecimalField(max_digits=10, decimal_places=3)
     is_canceled = models.BooleanField(default=False)
     is_reserved = models.BooleanField(default=False)
     is_processed = models.BooleanField(default=False)
@@ -49,7 +49,7 @@ class CashOutRequest(models.Model):
 
 
 class Transaction(AbstractBaseModelWithUUidAsPk):
-    amount = models.FloatField()
+    amount = models.DecimalField(max_digits=20, decimal_places=5)
     wallet = models.ForeignKey(to=Wallet, on_delete=models.CASCADE)
     currency_type = models.CharField(choices=CurrencyType.CHOICES, default=CurrencyType.USD)
     currency_swap = models.CharField(choices=CurrencyType.CHOICES, default=CurrencyType.USD, null=True, blank=True)
@@ -63,8 +63,7 @@ class Transaction(AbstractBaseModelWithUUidAsPk):
 
 class TransactionLog(AbstractBaseModelWithUUidAsPk):
     wallet = models.ForeignKey(to=Wallet, on_delete=models.DO_NOTHING)
-    amount = models.FloatField()
-    balance_after = models.FloatField(default=0)
+    amount = models.DecimalField(max_digits=20, decimal_places=5)
     temp_transaction_ref = models.CharField(max_length=36, null=True, blank=True, default=None)
     transaction_type = models.CharField(choices=TransactionType.CHOICES, default=TransactionType.TRANSACTION)
 

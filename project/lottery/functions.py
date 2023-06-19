@@ -2,11 +2,11 @@ import random
 import string
 
 from django.db import transaction
-from django.utils import timezone
+from django.db.models import F
 
 from config.models import GlobalConfig
 from lottery.constants import WinnerType
-from lottery.models import RoundInfo, Ticket, RoundWinners, RoundWinnerDetail
+from lottery.models import RoundInfo, Ticket, RoundWinners, RoundDetail
 from wallet.constants import WalletType, TransactionType
 from wallet.models import Wallet, TransactionLog
 
@@ -20,11 +20,11 @@ def generate_ticket_number():
     return ticket_number
 
 
-def check_if_winner(ticket_number, goal):
-    if not (len(ticket_number) == len(goal) == 6):
+def check_if_winner(ticket_number, ticket_goal):
+    if not (len(ticket_number) == len(ticket_goal) == 6):
         return None
     counter = 0
-    for ticket_item, goal_item in zip(list(ticket_number), list(goal)):
+    for ticket_item, goal_item in zip(list(ticket_number), list(ticket_goal)):
         if ticket_item == goal_item:
             counter += 1
         else:
@@ -32,66 +32,77 @@ def check_if_winner(ticket_number, goal):
     return WINNER_TYPE_LIST[counter - 1] if counter else 'lose'
 
 
-def winner_process_job():
+def winner_process_job():  # job -> 12h
     round_info_qs = RoundInfo.objects.filter(is_done=False)
-    if len(round_info_qs) > 1:
+    if len(round_info_qs) != 1:
         return
 
-    round_info = round_info_qs.last()
-    if RoundInfo.objects.filter(number=round_info.number + 1).exists():
-        return
-
-    round_detail = RoundWinnerDetail.objects.filter(round=round_info)
+    round_info = round_info_qs.first()
+    ticket_count = Ticket.objects.filter(is_active=True, round=round_info).count()
 
     config_qs = GlobalConfig.objects.all()
-    ratio_with_type = {config.config_name: config.config_value for config in config_qs}
+    config_dict = {config.config_name: config.config_value for config in config_qs}
 
+    burn_ratio = config_dict['BURN_RATIO']
+
+    total_price = round_info.total_price + ticket_count * round_info.ticket_amount
+    burn_amount = total_price * burn_ratio / 100
+
+    main_wallet_obj = Wallet.objects.filter(WalletType.MAIN).select_for_update()
     with transaction.atomic():
-        round_number = round_info.number
+        # calculate winners
+        winners(round_info, winner_total_price=total_price - burn_amount)
 
-        winner_process(round_number)
-
-        round_info.lock_at = timezone.now()
+        round_info.ticket_count = ticket_count
+        round_info.total_price = total_price
+        round_info.burn_amount = burn_amount
         round_info.is_done = True
         round_info.save()
 
-        total_amount = [detail.total_amount for detail in round_detail if detail.count == 0]
-        goal = generate_ticket_number()
-        new_round = RoundInfo(number=round_info.number + 1, total_amount=total_amount, goal=goal, previous_round=round_info)
+        main_wallet_obj.update(balance=F('balance') + burn_amount)
+        TransactionLog.objects.create(wallet=main_wallet_obj.first(), amount=+burn_amount,
+                                      transaction_type=TransactionType.BURN)
+
+        # next round info
+        round_detail = RoundDetail.objects.filter(round=round_info)
+
+        total_amount_miss = sum([detail.total_amount for detail in round_detail if detail.count == 0])
+
+        ticket_goal = generate_ticket_number()
+        new_round = RoundInfo(number=round_info.number + 1, ticket_goal=ticket_goal, total_price=total_amount_miss,
+                              previous_round=round_info, ticket_amount=config_dict['TICKET_AMOUNT'])
         new_round.save()
 
         for item in WINNER_TYPE_LIST:
-            ratio = ratio_with_type[f'{item}_RATIO']
-            RoundWinnerDetail.objects.create(round=new_round, type=item, ratio=ratio)
+            ratio = config_dict[f'RATIO_{item.upper()}']
+            RoundDetail.objects.create(round=new_round, type=item, ratio=ratio)
 
 
-def winners(round_number):
-    round_info = RoundInfo.objects.filter(number=round_number, is_done=False).first()
-    if not round_info:
-        return None
+def winners(round_info, winner_total_price):
+    ticket_goal = round_info.ticket_goal
 
-    goal = round_info.goal
     ticket_qs = Ticket.objects.filter(round=round_info, is_active=True)
-    ticket_amount = ticket_qs[0].amount
 
-    result = {item: [] for item in WINNER_TYPE_LIST}
+    map_type_to_user_ids = {item: [] for item in WINNER_TYPE_LIST}
 
     for ticket in ticket_qs:
         ticket_number = ticket.number
-        ticket_winner_type = check_if_winner(ticket_number, goal)
+        ticket_winner_type = check_if_winner(ticket_number, ticket_goal)
         if not ticket_winner_type and ticket_winner_type == 'lose':
             continue
-        result[ticket_winner_type].append(str(ticket.user_id))
+        map_type_to_user_ids[ticket_winner_type].append(str(ticket.user_id))
 
-    round_winner_detail_qs = RoundWinnerDetail.objects.filter(round__number=round_number)
+    round_winner_detail_qs = RoundDetail.objects.filter(round=round_info)
 
     with transaction.atomic():
-        for winner_type, user_ids in result.items():
+        for winner_type, user_ids in map_type_to_user_ids.items():
             for round_winner_detail in round_winner_detail_qs:
                 if round_winner_detail.type == winner_type:
                     round_winner_detail.count = len(user_ids)
-                    round_winner_detail.total_amount = ticket_amount * len(user_ids)
+                    round_winner_detail.total_amount = winner_total_price * round_winner_detail.ratio / 100
                     round_winner_detail.save()
+
+                    break
 
             chunks = [user_ids[i:100 + i] for i in range(0, len(user_ids), 100)]
             for chunk in chunks:
@@ -100,25 +111,35 @@ def winners(round_number):
                 round_winners.save()
 
 
-def winner_process(round_number):
-    round_winner_detail_qs = RoundWinnerDetail.objects.filter(round__number=round_number)
-    amount_per_user = {detail.type: (detail.total_amount / detail.count) for detail in round_winner_detail_qs}
+def check_if_not_winner_processed():  # job -> 1h
+    round_winner_qs = RoundWinners.objects.filter(round__is_done=True, is_processed=False).select_related('round')
+    if not round_winner_qs:
+        return
+
+    for round_obj in round_winner_qs:
+        with transaction.atomic():
+            winner_process(round_obj.round.number, round_obj.round.total_price)
+
+
+def winner_process(round_number, total_price):
+    round_detail_qs = RoundDetail.objects.filter(round__number=round_number).select_related('round')
     round_winner_qs = RoundWinners.objects.filter(is_processed=False, round__number=round_number)
     wallet_qs = Wallet.objects.filter(wallet_type=WalletType.USD)
 
-    for round_winner_obj in round_winner_qs:
-        winner_ids = round_winner_obj.winner_ids
-        amount = amount_per_user[round_winner_obj.type]
+    map_type_to_amount_per_user = {detail.type: ((total_price * detail.ratio) / (detail.count * 100)) for detail in
+                                   round_detail_qs}
+    for round_winners in round_winner_qs:
+        winner_ids = round_winners.winner_ids
+        amount = map_type_to_amount_per_user[round_winners.type]
 
         wallet_qs = wallet_qs.filter(identifier__in=winner_ids).select_for_update()
         with transaction.atomic():
-            for wallet_obj in wallet_qs:
-                wallet_obj.balance += amount
-                wallet_obj.save()
+            wallet_qs.update(balance=F('balance') + amount)
 
-                transaction_log = TransactionLog(wallet=wallet_obj, amount=amount, balance_after=wallet_obj.balance,
-                                                 transaction_type=TransactionType.LOTTERY)
-                transaction_log.save()
+            transaction_logs = [TransactionLog(wallet=wallet_obj, amount=+amount, transaction_type=TransactionType.LOTTERY)
+                                for wallet_obj in wallet_qs]
 
-            round_winner_obj.is_processed = True
-            round_winner_obj.save()
+            TransactionLog.objects.bulk_create(transaction_logs)
+
+            round_winners.is_processed = True
+            round_winners.save()
