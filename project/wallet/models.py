@@ -9,7 +9,7 @@ class Wallet(AbstractBaseModelWithUUidAsPk):  # wallet site
     identifier = models.CharField(max_length=42)  # wallet_address user / owner
     wallet_type = models.CharField(choices=WalletType.CHOICES, default=WalletType.USD)
     balance = models.DecimalField(default=0.0, max_digits=20, decimal_places=5)
-    flagged_wallet = models.BooleanField(default=False, blank=False, null=False)
+    flagged_wallet = models.BooleanField(default=False)
 
     def __str__(self):
         return self.identifier

@@ -24,9 +24,8 @@ class User(AbstractBaseModelWithUUidAsPk):
 
 
 class UserSession(models.Model):
-    session_id = models.CharField(max_length=10, unique=True)
+    session_id = models.CharField(max_length=10, null=False, blank=False, unique=True)
     user = models.ForeignKey(to=User, on_delete=models.CASCADE)
-    cain_id = models.CharField(max_length=42)
     # lang = models.CharField(choices=LangChoice.CHOICES, max_length=2, default=LangChoice.EN)
 
     last_login = models.DateTimeField(default=timezone.now)

@@ -18,6 +18,8 @@ VAULT_PRIVATE_ROOT = env('APP_VAULT_PRIVATE', default='/var/services/panc/vault'
 PRIVATE_KEY = open(VAULT_PRIVATE_ROOT + "/id_rsa").read()
 PUBLIC_KEY = open(VAULT_PUBLIC_ROOT + "/id_rsa.pub").read()
 
+ACCESS_TOKEN_EXP_SECONDS = 1 * 60 * 60
+
 REDIS_HOST = env('REDIS_HOST', default='localhost')
 REDIS_PORT = env('REDIS_PORT', default=6379)
 REDIS_INSTANCE = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=1)
