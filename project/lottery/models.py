@@ -38,7 +38,7 @@ class Ticket(AbstractBaseModelWithUUidAsPk):
 class RoundDetail(models.Model):
     count = models.IntegerField(default=0)
     total_amount = models.DecimalField(default=0, max_digits=20, decimal_places=2)
-    type = models.CharField(choices=WinnerType.CHOICES, default=WinnerType.CHOICES)
+    type = models.CharField(max_length=10, choices=WinnerType.CHOICES, default=WinnerType.CHOICES)
     round = models.ForeignKey(to=RoundInfo, on_delete=models.CASCADE)
     ratio = models.FloatField()
 
@@ -51,7 +51,7 @@ class RoundDetail(models.Model):
 class RoundWinners(models.Model):
     winner_count = models.IntegerField(default=0)  # 1 >= x >= 100
     winner_ids = fields.ArrayField(base_field=models.UUIDField(), default=list)
-    type = models.CharField(choices=WinnerType.CHOICES, default=WinnerType.CHOICES)
+    type = models.CharField(max_length=10, choices=WinnerType.CHOICES, default=WinnerType.CHOICES)
     round = models.ForeignKey(to=RoundInfo, on_delete=models.DO_NOTHING)
 
     is_processed = models.BooleanField(default=False)
