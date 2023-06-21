@@ -32,7 +32,7 @@ def check_if_winner(ticket_number, ticket_goal):
     return WINNER_TYPE_LIST[counter - 1] if counter else 'lose'
 
 
-def winner_process_job():  # job -> 12h
+def lottery_process():  # job -> 4h
     round_info_qs = RoundInfo.objects.filter(is_done=False)
     if len(round_info_qs) != 1:
         return
@@ -111,7 +111,7 @@ def winners(round_info, winner_total_price):
                 round_winners.save()
 
 
-def check_if_not_winner_processed():  # job -> 1h
+def check_if_not_winner_processed():  # job -> 2h
     round_winner_qs = RoundWinners.objects.filter(round__is_done=True, is_processed=False).select_related('round')
     if not round_winner_qs:
         return

@@ -8,7 +8,7 @@ from user.models import AbstractBaseModelWithUUidAsPk, User
 
 class RoundInfo(models.Model):
     number = models.IntegerField(default=1, unique=True)
-    ticket_goal = models.CharField(max_length=128, editable=False)  # hash
+    ticket_goal = models.CharField(max_length=6, editable=False)
     total_price = models.DecimalField(default=0.0, max_digits=20, decimal_places=2)
     burn_amount = models.DecimalField(default=0.0, max_digits=10, decimal_places=2)
     ticket_count = models.IntegerField(default=0)

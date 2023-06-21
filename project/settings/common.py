@@ -26,6 +26,9 @@ REDIS_INSTANCE = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=1)
 
 SECRET_KEY = env('SECRET_KEY', default='DUMMY_KEY')
 
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379')
+CELERY_RESULT_BACKEND = env('CELERY_BROKER_URL', default='redis://localhost:6379')
+
 DEBUG = True if IS_DEBUG == 1 else False
 
 ALLOWED_HOSTS = ['*']
@@ -46,6 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_celery_beat',
     'user.apps.UserConfig',
     'wallet.apps.WalletConfig',
     'config.apps.ConfigConfig',
