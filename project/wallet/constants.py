@@ -10,12 +10,12 @@ class WalletType:
 
 class CurrencyType:
     USD = 'usd'
-    ETR = 'etr'
+    ETH = 'eth'
     BTC = 'btc'
 
     CHOICES = (
         (USD, 'usd'),
-        (ETR, 'etr'),
+        (ETH, 'eth'),
         (BTC, 'btc'),
     )
 
