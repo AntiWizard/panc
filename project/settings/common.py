@@ -29,6 +29,10 @@ SECRET_KEY = env('SECRET_KEY', default='DUMMY_KEY')
 CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379')
 CELERY_RESULT_BACKEND = env('CELERY_BROKER_URL', default='redis://localhost:6379')
 
+API_KEY = env('API_KEY')
+CONVERT_API_CURRENCY_V1 = "https://api.api-ninjas.com/v1/cryptoprice"
+# CONVERT_API_CURRENCY_V2 = "https://api.api-ninjas.com/v1/cryptoprice"
+
 DEBUG = True if IS_DEBUG == 1 else False
 
 ALLOWED_HOSTS = ['*']

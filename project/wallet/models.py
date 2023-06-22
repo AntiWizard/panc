@@ -19,7 +19,7 @@ class Wallet(AbstractBaseModelWithUUidAsPk):  # wallet site
 
 
 class CashOutRequest(models.Model):
-    user = models.ForeignKey(to=User, on_delete=models.DO_NOTHING)
+    wallet = models.ForeignKey(to=Wallet, on_delete=models.DO_NOTHING)
     type = models.CharField(max_length=5, choices=CurrencyType.CHOICES, default=CurrencyType.USD)
     amount = models.DecimalField(max_digits=10, decimal_places=3)
     is_canceled = models.BooleanField(default=False)

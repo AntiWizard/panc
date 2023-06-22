@@ -12,8 +12,8 @@ class WalletAdmin(admin.ModelAdmin):
 
 @admin.register(CashOutRequest)
 class CashOutRequestAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user', 'type', 'amount', 'is_canceled', 'is_reserved', 'is_processed', 'created_at']
-    search_fields = ['user']
+    list_display = ['id', 'wallet', 'type', 'amount', 'is_canceled', 'is_reserved', 'is_processed', 'created_at']
+    search_fields = ['wallet']
     list_filter = ['is_canceled', 'is_reserved', 'is_processed']
 
 

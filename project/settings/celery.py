@@ -20,4 +20,8 @@ app.conf.beat_schedule = {
         'task': 'lottery.tasks.check_if_not_winner_processed_job',
         'schedule': crontab(minute='30', hour='*/2'),
     },
+    'reject_cashout_reqeust_job': {
+        'task': 'wallet.tasks.reject_cashout_reqeust_job',
+        'schedule': crontab(minute='30', hour='*/2'),
+    },
 }
