@@ -1,3 +1,4 @@
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 import decimal
@@ -10,7 +11,8 @@ from wallet.models import TransactionLog, Wallet, CashOutRequest, Transaction
 from wallet.serializers import CashoutRequestSerializer, SwapSerializer, ConvertToUSDSerializer
 
 
-class ConvertToUSDView(APIView):
+class ConvertToUSDView(GenericAPIView):
+    serializer_class = ConvertToUSDSerializer
 
     def get(self, request):
         data = request.data if request.data else {}
@@ -29,7 +31,7 @@ class ConvertToUSDView(APIView):
             status=200)
 
 
-class SwapDefaultView(APIView):
+class SwapDefaultView(GenericAPIView):
 
     def post(self, request):
         balance_from = convert_currency_to_usdt(CurrencyType.BTC).get('price')
@@ -47,8 +49,9 @@ class SwapDefaultView(APIView):
         return Response(data={'message': 'OK', 'data': data}, status=200)
 
 
-class SwapView(APIView):
+class SwapView(GenericAPIView):
     permission_classes = [IsAuthenticatedPenc]
+    serializer_class = SwapSerializer
 
     def post(self, request):
         data = request.data if request.data else {}
@@ -78,7 +81,7 @@ class SwapView(APIView):
         return Response(data={'message': 'OK', 'data': data}, status=200)
 
 
-class CashoutListView(APIView):
+class CashoutListView(GenericAPIView):
     permission_classes = [IsAuthenticatedPenc]
 
     def get(self, request):
@@ -109,8 +112,9 @@ class CashoutListView(APIView):
         return Response(data={'message': 'OK', 'data': data}, status=200)
 
 
-class CashoutDetailView(APIView):
+class CashoutDetailView(GenericAPIView):
     permission_classes = [IsAuthenticatedPenc]
+    serializer_class = CashoutRequestSerializer
 
     def get(self, request, pk):
         user_id = request.user_id
@@ -180,7 +184,7 @@ class CashoutDetailView(APIView):
         return Response(data={'message': 'OK', 'data': data}, status=200)
 
 
-class TransactionLogListView(APIView):
+class TransactionLogListView(GenericAPIView):
     permission_classes = [IsAuthenticatedPenc]
 
     def get(self, request):

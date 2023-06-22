@@ -1,5 +1,5 @@
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from lottery.functions import generate_ticket_number
 from lottery.models import RoundInfo, Ticket, RoundDetail
@@ -9,7 +9,7 @@ from wallet.constants import WalletType
 from wallet.models import Wallet
 
 
-class BuyTicketView(APIView):
+class BuyTicketView(GenericAPIView):
     permission_classes = [IsAuthenticatedPenc]
 
     def post(self, request):
@@ -41,7 +41,7 @@ class BuyTicketView(APIView):
         return Response(data={'message': 'OK', 'data': data}, status=200)
 
 
-class TicketListView(APIView):
+class TicketListView(GenericAPIView):
     permission_classes = [IsAuthenticatedPenc]
 
     def get(self, request):
@@ -64,8 +64,7 @@ class TicketListView(APIView):
         return Response(data={'message': 'OK', 'data': data}, status=200)
 
 
-class RoundInfoView(APIView):
-    permission_classes = []
+class RoundInfoView(GenericAPIView):
 
     def get(self, request):
         round_info_qs = RoundInfo.objects.filter(is_done=False).select_related('previous_round')
