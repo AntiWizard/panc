@@ -58,6 +58,8 @@ INSTALLED_APPS = [
     'wallet.apps.WalletConfig',
     'config.apps.ConfigConfig',
     'lottery.apps.LotteryConfig',
+    # third_apps
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
