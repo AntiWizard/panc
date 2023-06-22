@@ -3,7 +3,7 @@ from rest_framework import serializers
 from wallet.constants import CurrencyType
 
 
-class BaseSerializer(serializers.BaseSerializer):
+class BasicSerializer(serializers.Serializer):
     def create(self, validated_data):
         pass
 
@@ -11,17 +11,17 @@ class BaseSerializer(serializers.BaseSerializer):
         pass
 
 
-class SwapSerializer(BaseSerializer):
+class SwapSerializer(BasicSerializer):
     from_type = serializers.ChoiceField(required=True, choices=CurrencyType.CHOICES)
     to_type = serializers.ChoiceField(required=True, choices=CurrencyType.CHOICES)
     amount = serializers.DecimalField(required=True, max_digits=10, decimal_places=3)
 
 
-class ConvertToUSDSerializer(BaseSerializer):
+class ConvertToUSDSerializer(BasicSerializer):
     type = serializers.ChoiceField(required=True, choices=CurrencyType.CHOICES)
     amount = serializers.DecimalField(required=True, max_digits=10, decimal_places=3)
 
 
-class CashoutRequestSerializer(BaseSerializer):
+class CashoutRequestSerializer(BasicSerializer):
     type = serializers.ChoiceField(required=True, choices=CurrencyType.CHOICES)
     amount = serializers.DecimalField(required=True, max_digits=10, decimal_places=3)
