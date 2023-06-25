@@ -1,7 +1,15 @@
 from django.urls import path
 
-from wallet.views import SwapView, CashoutListView, CashoutDetailView, TransactionLogListView, ConvertToUSDView, \
-    SwapDefaultView, ConnectWalletView
+from wallet.views import (
+    SwapView,
+    CashoutListView,
+    CashoutDetailView,
+    TransactionLogListView,
+    ConvertToUSDView,
+    SwapDefaultView,
+    ConnectWalletView,
+    TransactionView,
+)
 
 urlpatterns = [
     path('swap/', SwapView.as_view(), name='swap'),
@@ -11,4 +19,5 @@ urlpatterns = [
     path('cashout/<int:pk>/', CashoutDetailView.as_view(), name='cashout_detail'),
     path('transaction-list/', TransactionLogListView.as_view(), name='transaction_list'),
     path('connect/', ConnectWalletView.as_view(), name='connect'),
+    path('transaction/', TransactionView.as_view(), name='transaction_create'),
 ]
