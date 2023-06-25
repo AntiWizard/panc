@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'lottery.apps.LotteryConfig',
     # third_apps
     'drf_spectacular',
+    'rest_framework_swagger',
 ]
 
 MIDDLEWARE = [

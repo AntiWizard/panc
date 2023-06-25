@@ -1,8 +1,11 @@
+import json
+
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from rest_framework.views import APIView
 import decimal
-
+from web3 import Web3, EthereumTesterProvider
 from user.models import User
 from user.permissions import IsAuthenticatedPenc
 from utils.ex_request import convert_currency_to_usdt
@@ -207,3 +210,18 @@ class TransactionLogListView(GenericAPIView):
             })
 
         return Response(data={'message': 'OK', 'data': data}, status=200)
+
+class ConnectWalletView(GenericAPIView):
+
+    @action(methods=["GET"], detail=False)
+    def get(self, request):
+        address = request.GET.get("address") # get wallet address in param
+        result = Web3.is_address(address)
+        if result:
+            try:
+                user = User.objects.get(wallet_address=address, is_active=True)
+            except ValueError:
+                return Response("THIS_WALLET_EXIST")
+            user = User.objects.create(wallet_address=address)
+            return Response(json.loads(user)) # TODO CHECK USER AND WALLET MODEL
+        return Response("YOUR_WALLET_IS_NOT_VALID")
