@@ -1,17 +1,15 @@
-import json
-import requests
+import decimal
+from django.db import transaction
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from rest_framework.decorators import action
-from rest_framework.views import APIView
-import decimal
-from web3 import Web3, EthereumTesterProvider
+
+from config.models import GlobalConfig
 from user.models import User
 from user.permissions import IsAuthenticatedPenc
 from utils.ex_request import convert_currency_to_usdt
 from wallet.constants import WalletType, CurrencyType
 from wallet.models import TransactionLog, Wallet, CashOutRequest, Transaction
-from wallet.serializers import CashoutRequestSerializer, SwapSerializer, ConvertToUSDSerializer
+from wallet.serializers import CashoutRequestSerializer, SwapSerializer, ConvertToUSDSerializer, SecondSwapSerializer
 
 
 class ConvertToUSDView(GenericAPIView):
@@ -35,24 +33,31 @@ class ConvertToUSDView(GenericAPIView):
 
 
 class SwapDefaultView(GenericAPIView):
-
     def post(self, request):
+        ratio = GlobalConfig.objects.filter(config_name='SWAP_RATIO').first()
+        if not ratio:
+            return Response(data={'message': 'Internal server error'}, status=500)
+        ratio_value = ratio.config_value
+
         balance_from = convert_currency_to_usdt(CurrencyType.BTC).get('price')
         balance_to = convert_currency_to_usdt(CurrencyType.ETH).get('price')
-
         if not balance_from or not balance_to:
             return Response(data={'message': 'Internal server error'}, status=500)
+
+        ratio_balance = (balance_from / balance_to) * (ratio_value / 100)
         data = {
             'from_type': CurrencyType.BTC,
             'to_type': CurrencyType.ETH,
-            'from_amount': decimal.Decimal(1),
-            'to_amount': decimal.Decimal(balance_from) / decimal.Decimal(balance_to),
+            'from_amount': 1,
+            'ratio': ratio_value,
+            'ratio_balance': ratio_balance,
+            'to_amount': (balance_from / balance_to) * ((100 - ratio_value) / 100),
         }
 
         return Response(data={'message': 'OK', 'data': data}, status=200)
 
 
-class SwapView(GenericAPIView):
+class FirstStepSwapView(GenericAPIView):
     permission_classes = [IsAuthenticatedPenc]
     serializer_class = SwapSerializer
 
@@ -65,23 +70,83 @@ class SwapView(GenericAPIView):
 
         user_id = request.user_id
         user = User.objects.filter(id=user_id).first()
-        wallet_qs = Wallet.objects.filter(identifier=user.wallet_address, wallet_type=WalletType.USD)
-        if len(wallet_qs) != 1:
+        if not user:
             return Response(data={'message': 'Internal server error'}, status=500)
+        # calcute coins
 
-        transaction = Transaction.objects.create(amount=serializer.validated_data['amount'],
-                                                 type=serializer.validated_data['from_type'],
-                                                 currency_swap=serializer.validated_data['to_type'],
-                                                 is_swap=True)
+        # TODO CHECK COIN AND BALANCE IN USER WALLET
+        ratio = GlobalConfig.objects.filter(config_name='SWAP_RATIO').first()
+        if not ratio:
+            return Response(data={'message': 'Internal server error'}, status=500)
+        ratio_value = ratio.config_value
+
+        balance_from = convert_currency_to_usdt(serializer.validated_data['from_type']).get('price')
+        balance_to = convert_currency_to_usdt(serializer.validated_data['to_type']).get('price')
+        if not balance_from or not balance_to:
+            return Response(data={'message': 'Internal server error'}, status=500)
+        to_amount = ((serializer.validated_data['from_amount'] * balance_from) / balance_to) * (100 - ratio_value) / 100
+
+        ratio_balance = ((serializer.validated_data['from_amount'] * balance_from) / balance_to) * (ratio_value / 100)
+
+        # transaction = Transaction.objects.create(amount=serializer.validated_data['amount'],
+        #                                          type=serializer.validated_data['from_type'],
+        #                                          currency_swap=serializer.validated_data['to_type'],
+        #                                          is_swap=True)
 
         data = {
-            'from_type': transaction.currency_type,
-            'swap_type': transaction.currency_swap,
-            'status': transaction.status,
-            'created_at': transaction.created_at
+            'to_amount': to_amount,
+            'ratio_balance': ratio_balance,
+            'ratio_value': ratio_value
         }
 
         return Response(data={'message': 'OK', 'data': data}, status=200)
+
+
+class SecondStepSwapView(GenericAPIView):
+    permission_classes = [IsAuthenticatedPenc]
+    serializer_class = SecondSwapSerializer
+
+    def post(self, request):
+        data = request.data if request.data else {}
+        serializer = SecondSwapSerializer(data=data)
+
+        if not serializer.is_valid():
+            return Response(data={'message': 'BadRequest'}, status=400)
+        user_id = request.user_id
+        user = User.objects.filter(id=user_id).first()
+        if not user:
+            return Response(data={'message': 'Internal server error'}, status=500)
+        wallet_address = Wallet.objects.get(identifier=user.wallet_address)
+        with transaction.atomic():
+            payment_to_main_wallet = Wallet.objects.select_for_update().get(wallet_type=WalletType.MAIN)
+            payment_to_main_wallet.balance += serializer.validated_data['ratio_balance']
+            payment_to_main_wallet.save()
+            transaction_user = Transaction.objects.create(
+                amount=serializer.validated_data['from_amount'],
+                amount_swap=serializer.validated_data['to_amount'],
+                wallet=wallet_address,
+                currency_type= serializer.validated_data['from_type'],
+                currency_swap=serializer.validated_data['to_type'],
+                is_swap=True
+            )
+            transaction_log_user = TransactionLog.objects.create(
+                wallet=wallet_address,
+                amount=serializer.validated_data['from_amount']
+            )
+            transaction_site =Transaction.objects.create(
+                amount=serializer.validated_data['to_amount'],
+                amount_swap=serializer.validated_data['from_amount'],
+                wallet=payment_to_main_wallet,
+                currency_type= serializer.validated_data['to_type'],
+                currency_swap=serializer.validated_data['from_type'],
+                is_swap=True
+            )
+            transaction_log_site = TransactionLog.objects.create(
+                wallet=payment_to_main_wallet,
+                amount=serializer.validated_data['to_amount']
+            )
+        return Response(data={'message': 'Your transaction is done'}, status=200)
+
 
 
 class CashoutListView(GenericAPIView):
@@ -211,30 +276,29 @@ class TransactionLogListView(GenericAPIView):
 
         return Response(data={'message': 'OK', 'data': data}, status=200)
 
-
-class TransactionView(GenericAPIView):
-    permission_classes = [IsAuthenticatedPenc]
-    serializer_class = SwapSerializer
-
-    def post(self, request):
-        coin_from = request.data.get("coin_from", "")
-        coin_to = request.data.get("coin_to", "")
-        # check coins price
-        key_1 = "https://api.binance.com/api/v3/ticker/price?symbol=" + coin_from
-        key_2 = "https://api.binance.com/api/v3/ticker/price?symbol=" + coin_to
-
-        coin_from_price = (requests.get(key_1)).json()
-        coin_to_price = (requests.get(key_2)).json()
-
-        coin_from_count = int(request.data.get("coin_from_count", ""))
-        coin_to_count = int(request.data.get("coin_to_count", ""))
-
-        result_coin_from_price = coin_from_count * coin_from_price
-        result_coin_to_price = coin_to_count * coin_to_price
-
-        if result_coin_to_price > result_coin_from_price:
-            # check user wallet balance
-            user_wallet_balance = Web3.eth.get_balance(request.user.wallet_address)
-            if (user_wallet_balance + result_coin_from_price) > result_coin_to_price:
-                raise Exception("YOUR BALANCE IS NOT ENOUGH")
-        # TODO CHECK coin_to_count
+# class TransactionView(GenericAPIView):
+#     permission_classes = [IsAuthenticatedPenc]
+#     serializer_class = SwapSerializer
+#
+#     def post(self, request):
+#         coin_from = request.data.get("coin_from", "")
+#         coin_to = request.data.get("coin_to", "")
+#         # check coins price
+#         key_1 = "https://api.binance.com/api/v3/ticker/price?symbol=" + coin_from
+#         key_2 = "https://api.binance.com/api/v3/ticker/price?symbol=" + coin_to
+#
+#         coin_from_price = (requests.get(key_1)).json()
+#         coin_to_price = (requests.get(key_2)).json()
+#
+#         coin_from_count = int(request.data.get("coin_from_count", ""))
+#         coin_to_count = int(request.data.get("coin_to_count", ""))
+#
+#         result_coin_from_price = coin_from_count * coin_from_price
+#         result_coin_to_price = coin_to_count * coin_to_price
+#
+#         if result_coin_to_price > result_coin_from_price:
+#             # check user wallet balance
+#             user_wallet_balance = Web3.eth.get_balance(request.user.wallet_address)
+#             if (user_wallet_balance + result_coin_from_price) > result_coin_to_price:
+#                 raise Exception("YOUR BALANCE IS NOT ENOUGH")
+#         # TODO CHECK coin_to_count

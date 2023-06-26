@@ -50,6 +50,7 @@ class CashOutRequest(models.Model):
 
 class Transaction(AbstractBaseModelWithUUidAsPk):
     amount = models.DecimalField(max_digits=20, decimal_places=5)
+    amount_swap = models.DecimalField(max_digits=20, decimal_places=5, null=True, blank=True)
     wallet = models.ForeignKey(to=Wallet, on_delete=models.CASCADE)
     currency_type = models.CharField(max_length=5, choices=CurrencyType.CHOICES, default=CurrencyType.USD)
     currency_swap = models.CharField(max_length=5, choices=CurrencyType.CHOICES, default=None, null=True,
