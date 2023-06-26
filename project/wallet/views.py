@@ -212,21 +212,6 @@ class TransactionLogListView(GenericAPIView):
         return Response(data={'message': 'OK', 'data': data}, status=200)
 
 
-class ConnectWalletView(GenericAPIView):
-
-    def get(self, request):
-        address = request.GET.get("address")  # get wallet address in param
-        result = Web3.is_address(address)
-        if result:
-            try:
-                user = User.objects.get(wallet_address=address, is_active=True)
-            except ValueError:
-                return Response("THIS_WALLET_EXIST")
-            user = User.objects.create(wallet_address=address)
-            return Response(json.loads(user))  # TODO CHECK USER AND WALLET MODEL
-        return Response("YOUR_WALLET_IS_NOT_VALID")
-
-
 class TransactionView(GenericAPIView):
     permission_classes = [IsAuthenticatedPenc]
     serializer_class = SwapSerializer
@@ -252,5 +237,4 @@ class TransactionView(GenericAPIView):
             user_wallet_balance = Web3.eth.get_balance(request.user.wallet_address)
             if (user_wallet_balance + result_coin_from_price) > result_coin_to_price:
                 raise Exception("YOUR BALANCE IS NOT ENOUGH")
-        #TODO CHECK coin_to_count
-
+        # TODO CHECK coin_to_count

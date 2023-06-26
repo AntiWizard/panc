@@ -2,6 +2,7 @@ import jwt
 from django.conf import settings
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from web3 import Web3
 
 from user.functions import generate_new_session_for_user, generate_token_pair_dict
 from user.models import UserSession, User
@@ -18,6 +19,10 @@ def verify_login(request):
     if not serializer.is_valid():
         return Response(data={'message': 'Bad request'}, status=400)
     wallet_address = serializer.validated_data['address']
+    result = Web3.is_address(wallet_address)
+    if not result:
+        return Response(data={'message': 'Bad request'}, status=400)
+
     user_qs = User.objects.filter(wallet_address=wallet_address)
     if len(user_qs) < 1:
         user = User.objects.create(wallet_address=wallet_address)

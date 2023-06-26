@@ -7,7 +7,6 @@ from wallet.views import (
     TransactionLogListView,
     ConvertToUSDView,
     SwapDefaultView,
-    ConnectWalletView,
     TransactionView,
 )
 
@@ -18,6 +17,5 @@ urlpatterns = [
     path('cashout-list/', CashoutListView.as_view(), name='cashout_list'),
     path('cashout/<int:pk>/', CashoutDetailView.as_view(), name='cashout_detail'),
     path('transaction-list/', TransactionLogListView.as_view(), name='transaction_list'),
-    path('connect/', ConnectWalletView.as_view(), name='connect'),
     path('transaction/', TransactionView.as_view(), name='transaction_create'),
 ]
