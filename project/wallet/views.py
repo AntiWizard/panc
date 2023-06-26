@@ -276,29 +276,3 @@ class TransactionLogListView(GenericAPIView):
 
         return Response(data={'message': 'OK', 'data': data}, status=200)
 
-# class TransactionView(GenericAPIView):
-#     permission_classes = [IsAuthenticatedPenc]
-#     serializer_class = SwapSerializer
-#
-#     def post(self, request):
-#         coin_from = request.data.get("coin_from", "")
-#         coin_to = request.data.get("coin_to", "")
-#         # check coins price
-#         key_1 = "https://api.binance.com/api/v3/ticker/price?symbol=" + coin_from
-#         key_2 = "https://api.binance.com/api/v3/ticker/price?symbol=" + coin_to
-#
-#         coin_from_price = (requests.get(key_1)).json()
-#         coin_to_price = (requests.get(key_2)).json()
-#
-#         coin_from_count = int(request.data.get("coin_from_count", ""))
-#         coin_to_count = int(request.data.get("coin_to_count", ""))
-#
-#         result_coin_from_price = coin_from_count * coin_from_price
-#         result_coin_to_price = coin_to_count * coin_to_price
-#
-#         if result_coin_to_price > result_coin_from_price:
-#             # check user wallet balance
-#             user_wallet_balance = Web3.eth.get_balance(request.user.wallet_address)
-#             if (user_wallet_balance + result_coin_from_price) > result_coin_to_price:
-#                 raise Exception("YOUR BALANCE IS NOT ENOUGH")
-#         # TODO CHECK coin_to_count
