@@ -4,9 +4,12 @@ services:
     container_name: panc
     restart: always
     build: .
+    command: gunicorn myproject.wsgi:application -c gunicorn.conf.py
     depends_on:
       - db
       - redis
+#      - celery
+#      - celery-beat
     ports:
       - "8000:8000"
     volumes:
@@ -37,32 +40,32 @@ services:
       - "6379"
     networks:
       - main
-  celery:
-    build: .
-    command: sh -c "cd project && celery -A settings worker -l INFO"
-    volumes:
-      - "/var/services/panc/celery:/var/services/panc/celery"
-      - "/var/services/panc/vault:/var/services/panc/vault"
-    env_file:
-      - assets/base.env
-    depends_on:
-      - redis
-      - db
-    networks:
-      - main
-  celery-beat:
-    build: .
-    command: sh -c "cd project && celery -A settings beat -l INFO"
-    volumes:
-      - "/var/services/panc/celery:/var/services/panc/celery"
-      - "/var/services/panc/vault:/var/services/panc/vault"
-    env_file:
-      - assets/base.env
-    depends_on:
-      - redis
-      - db
-    networks:
-      - main
+#  celery:
+#    build: .
+##    command: sh -c "cd project && celery -A settings worker -l INFO"
+#    volumes:
+#      - "/var/services/panc/celery:/var/services/panc/celery"
+#      - "/var/services/panc/vault:/var/services/panc/vault"
+#    env_file:
+#      - assets/base.env
+#    depends_on:
+#      - redis
+#      - db
+#    networks:
+#      - main
+#  celery-beat:
+#    build: .
+##    command: sh -c "cd project && celery -A settings beat -l INFO"
+#    volumes:
+#      - "/var/services/panc/celery:/var/services/panc/celery"
+#      - "/var/services/panc/vault:/var/services/panc/vault"
+#    env_file:
+#      - assets/base.env
+#    depends_on:
+#      - redis
+#      - db
+#    networks:
+#      - main
 
 networks:
   main:
