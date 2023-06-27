@@ -21,4 +21,6 @@ RUN rm /opt/requirements.txt
 ADD assets/entrypoint.sh /opt/entrypoint.sh
 ADD project /opt/project
 
-ENTRYPOINT [ "/bin/sh", "/opt/entrypoint.sh" ]
+RUN chmod +x /opt/entrypoint.sh
+
+ENTRYPOINT ["/opt/entrypoint.sh" ]

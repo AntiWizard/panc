@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-echo
 if [ "$1" == "gunicorn" ]; then
   echo "Running collect static ..."
   python /opt/project/manage.py collectstatic --noinput
@@ -13,20 +11,23 @@ if [ "$1" == "gunicorn" ]; then
   done
   echo "Connected to database"
 
-  echo "Unknown command: $1"
   python3 /opt/project/manage.py migrate --noinput
+
   if [ $? -ne 0 ]; then
     echo "Migrate failed!" >&2
     exit 1
   fi
+
   python3 /opt/project/manage.py default_config
-  gunicorn myproject.wsgi:application -c gunicorn.conf.py
+
+  exec  gunicorn --bind 0.0.0.0:8000 --chdir /opt/project --log-level='info' --log-file=- --workers $GUNICORN_WORKER project.wsgi:application
 
 elif [ "$1" == "celery" ]; then
+  cd /opt/project
   celery -A settings worker -l INFO
+
 elif [ "$1" == "celery-beat" ]; then
-  celery -A settings worker -l INFO
-else
-  echo "Unknown command: $1"
-  exit 1
+  cd /opt/project
+  celery -A settings beat -l INFO
+
 fi

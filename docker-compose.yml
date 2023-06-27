@@ -4,7 +4,7 @@ services:
     container_name: panc
     restart: always
     build: .
-    command: gunicorn myproject.wsgi:application -c gunicorn.conf.py
+    command: [ "gunicorn" ]
     depends_on:
       - db
       - redis
@@ -42,7 +42,7 @@ services:
       - main
   celery:
     build: .
-    command: sh -c "cd project && celery -A settings worker -l INFO"
+    command: [ "celery" ]
     volumes:
       - "/var/services/panc/celery:/var/services/panc/celery"
       - "/var/services/panc/vault:/var/services/panc/vault"
@@ -55,7 +55,7 @@ services:
       - main
   celery-beat:
     build: .
-    command: sh -c "cd project && celery -A settings beat -l INFO"
+    command: [ "celery-beat" ]
     volumes:
       - "/var/services/panc/celery:/var/services/panc/celery"
       - "/var/services/panc/vault:/var/services/panc/vault"
