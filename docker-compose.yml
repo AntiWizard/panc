@@ -8,8 +8,8 @@ services:
     depends_on:
       - db
       - redis
-#      - celery
-#      - celery-beat
+      - celery
+      - celery-beat
     ports:
       - "8000:8000"
     volumes:
