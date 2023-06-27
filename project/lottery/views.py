@@ -4,13 +4,13 @@ from rest_framework.response import Response
 from lottery.functions import generate_ticket_number
 from lottery.models import RoundInfo, Ticket, RoundDetail
 from user.models import User
-from user.permissions import IsAuthenticatedPenc
+from user.permissions import IsAuthenticatedPanc
 from wallet.constants import WalletType
 from wallet.models import Wallet
 
 
 class BuyTicketView(GenericAPIView):
-    permission_classes = [IsAuthenticatedPenc]
+    permission_classes = [IsAuthenticatedPanc]
 
     def post(self, request):
         user_id = request.user_id
@@ -42,7 +42,7 @@ class BuyTicketView(GenericAPIView):
 
 
 class TicketListView(GenericAPIView):
-    permission_classes = [IsAuthenticatedPenc]
+    permission_classes = [IsAuthenticatedPanc]
 
     def get(self, request):
         user_id = request.user_id

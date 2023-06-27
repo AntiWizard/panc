@@ -5,7 +5,7 @@ from rest_framework.response import Response
 
 from config.models import GlobalConfig
 from user.models import User
-from user.permissions import IsAuthenticatedPenc
+from user.permissions import IsAuthenticatedPanc
 from utils.ex_request import convert_currency_to_usdt
 from wallet.constants import WalletType, CurrencyType
 from wallet.models import TransactionLog, Wallet, CashOutRequest, Transaction
@@ -58,7 +58,7 @@ class SwapDefaultView(GenericAPIView):
 
 
 class FirstStepSwapView(GenericAPIView):
-    permission_classes = [IsAuthenticatedPenc]
+    permission_classes = [IsAuthenticatedPanc]
     serializer_class = SwapSerializer
 
     def post(self, request):
@@ -103,7 +103,7 @@ class FirstStepSwapView(GenericAPIView):
 
 
 class SecondStepSwapView(GenericAPIView):
-    permission_classes = [IsAuthenticatedPenc]
+    permission_classes = [IsAuthenticatedPanc]
     serializer_class = SecondSwapSerializer
 
     def post(self, request):
@@ -150,7 +150,7 @@ class SecondStepSwapView(GenericAPIView):
 
 
 class CashoutListView(GenericAPIView):
-    permission_classes = [IsAuthenticatedPenc]
+    permission_classes = [IsAuthenticatedPanc]
 
     def get(self, request):
         user_id = request.user_id
@@ -181,7 +181,7 @@ class CashoutListView(GenericAPIView):
 
 
 class CashoutDetailView(GenericAPIView):
-    permission_classes = [IsAuthenticatedPenc]
+    permission_classes = [IsAuthenticatedPanc]
     serializer_class = CashoutRequestSerializer
 
     def get(self, request, pk):
@@ -253,7 +253,7 @@ class CashoutDetailView(GenericAPIView):
 
 
 class TransactionLogListView(GenericAPIView):
-    permission_classes = [IsAuthenticatedPenc]
+    permission_classes = [IsAuthenticatedPanc]
 
     def get(self, request):
         user_id = request.user_id
@@ -277,7 +277,7 @@ class TransactionLogListView(GenericAPIView):
         return Response(data={'message': 'OK', 'data': data}, status=200)
 
 # class TransactionView(GenericAPIView):
-#     permission_classes = [IsAuthenticatedPenc]
+#     permission_classes = [IsAuthenticatedPanc]
 #     serializer_class = SwapSerializer
 #
 #     def post(self, request):

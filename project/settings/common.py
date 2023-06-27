@@ -27,7 +27,7 @@ REDIS_INSTANCE = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=1)
 SECRET_KEY = env('SECRET_KEY', default='DUMMY_KEY')
 
 CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379')
-CELERY_RESULT_BACKEND = env('CELERY_BROKER_URL', default='redis://localhost:6379')
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://localhost:6379')
 
 API_KEY = env('API_KEY')
 CONVERT_API_CURRENCY_V1 = "https://api.api-ninjas.com/v1/cryptoprice"
@@ -128,6 +128,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-STATIC_URL = '/static/penc/'
+STATIC_URL = '/static/panc/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
