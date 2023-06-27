@@ -42,6 +42,7 @@ services:
     command: sh -c "cd project && celery -A settings worker -l INFO"
     volumes:
       - "/var/services/panc/celery:/var/services/panc/celery"
+      - "/var/services/panc/vault:/var/services/panc/vault"
     env_file:
       - assets/base.env
     depends_on:
@@ -54,6 +55,7 @@ services:
     command: sh -c "cd project && celery -A settings beat -l INFO"
     volumes:
       - "/var/services/panc/celery:/var/services/panc/celery"
+      - "/var/services/panc/vault:/var/services/panc/vault"
     env_file:
       - assets/base.env
     depends_on:
