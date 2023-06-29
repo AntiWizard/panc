@@ -2,7 +2,9 @@ import decimal
 from django.db import transaction
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-
+import requests
+from web3 import Web3
+from django.conf import settings
 from config.models import GlobalConfig
 from user.models import User
 from user.permissions import IsAuthenticatedPanc
@@ -34,6 +36,7 @@ class ConvertToUSDView(GenericAPIView):
 
 class SwapDefaultView(GenericAPIView):
     serializer_class = ConvertToUSDSerializer
+
     def post(self, request):
         ratio = GlobalConfig.objects.filter(config_name='SWAP_RATIO').first()
         if not ratio:
@@ -62,46 +65,48 @@ class FirstStepSwapView(GenericAPIView):
     permission_classes = [IsAuthenticatedPanc]
     serializer_class = SwapSerializer
 
-    def post(self, request):
-        data = request.data if request.data else {}
-        serializer = SwapSerializer(data=data)
-
-        if not serializer.is_valid():
-            return Response(data={'message': 'BadRequest'}, status=400)
-
-        user_id = request.user_id
-        user = User.objects.filter(id=user_id).first()
-        if not user:
-            return Response(data={'message': 'Internal server error'}, status=500)
-        # calcute coins
-
-        # TODO CHECK COIN AND BALANCE IN USER WALLET
-        ratio = GlobalConfig.objects.filter(config_name='SWAP_RATIO').first()
-        if not ratio:
-            return Response(data={'message': 'Internal server error'}, status=500)
-        ratio_value = ratio.config_value
-
-        balance_from = convert_currency_to_usdt(serializer.validated_data['from_type']).get('price')
-        balance_to = convert_currency_to_usdt(serializer.validated_data['to_type']).get('price')
-        if not balance_from or not balance_to:
-            return Response(data={'message': 'Internal server error'}, status=500)
-        to_amount = ((serializer.validated_data['from_amount'] * balance_from) / balance_to) * (100 - ratio_value) / 100
-
-        ratio_balance = ((serializer.validated_data['from_amount'] * balance_from) / balance_to) * (ratio_value / 100)
-
-        # transaction = Transaction.objects.create(amount=serializer.validated_data['amount'],
-        #                                          type=serializer.validated_data['from_type'],
-        #                                          currency_swap=serializer.validated_data['to_type'],
-        #                                          is_swap=True)
-
+    def get(self, request):
+        amount = float(request.GET.get("amount", ""))
+        currency_type = "ETH"
+        url = "https://min-api.cryptocompare.com/data/price?fsym=" + f"{currency_type}" + "&tsyms=BTC,USD,EUR"
+        try:
+            res = requests.get(url=url, headers={'X-Api-Key': settings.API_KEY})
+            if res.status_code == 200:
+                res = res.json()
+                global usd
+                usd = res.get("USD", "")
+        except:
+            return Response({"message": "please check again later"})
+        total = usd * amount
         data = {
-            'to_amount': to_amount,
-            'ratio_balance': ratio_balance,
-            'ratio_value': ratio_value
+            "total": total,
+            "usd": usd
         }
-
-        return Response(data={'message': 'OK', 'data': data}, status=200)
-
+        mumbai_rpc_url = "https://rpc-mumbai.maticvigil.com"
+        web3 = Web3(Web3.HTTPProvider(mumbai_rpc_url))
+        connect = web3.is_connected()
+        print(web3)
+        if not connect:
+            return Response(status=500)
+        # user_wallet_balance = web3.eth.get_balance(request.user.wallet_address)
+        user_wallet_balance = web3.eth.get_balance("0x8690F1feff62008A396B31c2C3f380bD0Ca6d8b8")  # TEST
+        print(user_wallet_balance)
+        if user_wallet_balance < amount:
+            return Response({"message": "YOUR BALANCE IS NOT ENOUGH IN WALLET"})
+        with transaction.atomic():
+            transaction_user = Transaction.objects.create(
+                amount=amount,
+                amount_swap=usd,
+                wallet=Wallet.objects.get(identifier=request.user.wallet_address),
+                currency_type=currency_type,
+                currency_swap="USD",
+                is_swap=True
+            )
+            transaction_log_user = TransactionLog.objects.create(
+                wallet=Wallet.objects.get(identifier=request.user.wallet_address),
+                amount=amount
+            )
+        return Response(data)
 
 class SecondStepSwapView(GenericAPIView):
     permission_classes = [IsAuthenticatedPanc]
@@ -126,7 +131,7 @@ class SecondStepSwapView(GenericAPIView):
                 amount=serializer.validated_data['from_amount'],
                 amount_swap=serializer.validated_data['to_amount'],
                 wallet=wallet_address,
-                currency_type= serializer.validated_data['from_type'],
+                currency_type=serializer.validated_data['from_type'],
                 currency_swap=serializer.validated_data['to_type'],
                 is_swap=True
             )
@@ -134,11 +139,11 @@ class SecondStepSwapView(GenericAPIView):
                 wallet=wallet_address,
                 amount=serializer.validated_data['from_amount']
             )
-            transaction_site =Transaction.objects.create(
+            transaction_site = Transaction.objects.create(
                 amount=serializer.validated_data['to_amount'],
                 amount_swap=serializer.validated_data['from_amount'],
                 wallet=payment_to_main_wallet,
-                currency_type= serializer.validated_data['to_type'],
+                currency_type=serializer.validated_data['to_type'],
                 currency_swap=serializer.validated_data['from_type'],
                 is_swap=True
             )
@@ -147,7 +152,6 @@ class SecondStepSwapView(GenericAPIView):
                 amount=serializer.validated_data['to_amount']
             )
         return Response(data={'message': 'Your transaction is done'}, status=200)
-
 
 
 class CashoutListView(GenericAPIView):
@@ -278,7 +282,6 @@ class TransactionLogListView(GenericAPIView):
 
         return Response(data={'message': 'OK', 'data': data}, status=200)
 
-
 # class TransactionView(GenericAPIView):
 #     permission_classes = [IsAuthenticatedPanc]
 #     serializer_class = SwapSerializer
@@ -305,4 +308,3 @@ class TransactionLogListView(GenericAPIView):
 #             if (user_wallet_balance + result_coin_from_price) > result_coin_to_price:
 #                 raise Exception("YOUR BALANCE IS NOT ENOUGH")
 #         # TODO CHECK coin_to_count
-
