@@ -33,6 +33,7 @@ class ConvertToUSDView(GenericAPIView):
 
 
 class SwapDefaultView(GenericAPIView):
+    serializer_class = ConvertToUSDSerializer
     def post(self, request):
         ratio = GlobalConfig.objects.filter(config_name='SWAP_RATIO').first()
         if not ratio:
@@ -151,6 +152,7 @@ class SecondStepSwapView(GenericAPIView):
 
 class CashoutListView(GenericAPIView):
     permission_classes = [IsAuthenticatedPenc]
+    serializer_class = CashoutRequestSerializer
 
     def get(self, request):
         user_id = request.user_id
