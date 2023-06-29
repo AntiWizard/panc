@@ -3,7 +3,7 @@ from django.conf import settings
 from rest_framework import permissions
 
 
-class IsAuthenticatedPenc(permissions.BasePermission):
+class IsAuthenticatedPanc(permissions.BasePermission):
 
     def has_permission(self, request, view):
         if 'HTTP_AUTHORIZATION' not in request.META:

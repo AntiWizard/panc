@@ -4,7 +4,7 @@ from celery import Celery
 from celery.schedules import crontab
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings')
-app = Celery('penc')
+app = Celery('panc')
 
 app.conf.timezone = 'UTC'
 

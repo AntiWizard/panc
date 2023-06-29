@@ -1,44 +1,73 @@
-#version: "3.5"
-#services:
-#  web:
-#    container_name: penc
-#    restart: always
-#    build: .
-#    depends_on:
-#      - db
-#      - cache
-#    ports:
-#      - "8020:80"
-#    volumes:
-#      - "/var/services/penc/media:/var/services/penc/media"
-#      - "/var/services/penc/vault:/var/services/penc/vault"
-#      - "/var/services/penc/static:/var/services/penc/static"
-#    env_file:
-#      - assets/base.env
-#    networks:
-#      - main
-#  db:
-#    container_name: penc-db
-#    restart: always
-#    image: "postgis/postgis:13-3.1-alpine"
-#    env_file:
-#      - assets/db.env
-#    volumes:
-#      - "/var/services/penc/db:/var/lib/postgresql/data"
-#    expose:
-#      - "5432"
-#    networks:
-#      - main
-#  cache:
-#    container_name: penc-cache
-#    restart: always
-#    image: "redis:6-alpine"
-#    expose:
-#      - "6379"
-#    networks:
-#      - main
-#
-#networks:
-#  main:
-#    name: penc
-#    driver: bridge
+version: "3.5"
+services:
+  web:
+    container_name: panc
+    restart: always
+    build: .
+    command: [ "gunicorn" ]
+    depends_on:
+      - db
+      - redis
+      - celery
+      - celery-beat
+    ports:
+      - "8000:8000"
+    volumes:
+      - "/var/services/panc/media:/var/services/panc/media"
+      - "/var/services/panc/vault:/var/services/panc/vault"
+      - "/var/services/panc/static:/var/services/panc/static"
+    env_file:
+      - assets/base.env
+    networks:
+      - main
+  db:
+    container_name: panc-db
+    restart: always
+    image: "postgres:15-alpine"
+    env_file:
+      - assets/db.env
+    volumes:
+      - "/var/services/panc/db:/var/lib/postgresql/data"
+    expose:
+      - "5432"
+    networks:
+      - main
+  redis:
+    container_name: panc-redis
+    restart: always
+    image: "redis:6-alpine"
+    expose:
+      - "6379"
+    networks:
+      - main
+  celery:
+    build: .
+    command: [ "celery" ]
+    volumes:
+      - "/var/services/panc/celery:/var/services/panc/celery"
+      - "/var/services/panc/vault:/var/services/panc/vault"
+    env_file:
+      - assets/base.env
+    depends_on:
+      - redis
+      - db
+    networks:
+      - main
+  celery-beat:
+    build: .
+    command: [ "celery-beat" ]
+    volumes:
+      - "/var/services/panc/celery:/var/services/panc/celery"
+      - "/var/services/panc/vault:/var/services/panc/vault"
+    env_file:
+      - assets/base.env
+    depends_on:
+      - redis
+      - db
+    networks:
+      - main
+
+networks:
+  main:
+    name: panc
+    driver: bridge

@@ -10,6 +10,7 @@ from wallet.views import (
     SecondStepSwapView
 )
 
+
 urlpatterns = [
     path('swap/default/', SwapDefaultView.as_view(), name='swap_default'),
     path('convert-to-usd/', ConvertToUSDView.as_view(), name='convert_to_usd'),
