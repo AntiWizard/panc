@@ -34,8 +34,16 @@ class ConvertToUSDView(GenericAPIView):
             status=200)
 
 
+class CurrencyTypeListView(GenericAPIView):
+    def get(self, request):
+        data = {}
+        for currency, value in CurrencyType.CHOICES:
+            data[currency] = value.upper()
+
+        return Response(data={'message': 'OK', 'data': data}, status=200)
+
+
 class SwapDefaultView(GenericAPIView):
-    serializer_class = ConvertToUSDSerializer
 
     def post(self, request):
         ratio = GlobalConfig.objects.filter(config_name='SWAP_RATIO').first()
@@ -43,15 +51,15 @@ class SwapDefaultView(GenericAPIView):
             return Response(data={'message': 'Internal server error'}, status=500)
         ratio_value = ratio.config_value
 
-        balance_from = convert_currency_to_usdt(CurrencyType.BTC).get('price')
-        balance_to = convert_currency_to_usdt(CurrencyType.ETH).get('price')
+        balance_from = convert_currency_to_usdt(CurrencyType.ETH).get('price')
+        balance_to = convert_currency_to_usdt(CurrencyType.BTC).get('price')
         if not balance_from or not balance_to:
             return Response(data={'message': 'Internal server error'}, status=500)
 
         ratio_balance = (balance_from / balance_to) * (ratio_value / 100)
         data = {
-            'from_type': CurrencyType.BTC,
-            'to_type': CurrencyType.ETH,
+            'from_type': CurrencyType.ETH,
+            'to_type': CurrencyType.BTC,
             'from_amount': 1,
             'ratio': ratio_value,
             'ratio_balance': ratio_balance,
@@ -66,40 +74,40 @@ class FirstStepSwapView(GenericAPIView):
     serializer_class = SwapSerializer
 
     def get(self, request):
-        amount = float(request.GET.get("amount", ""))
-        currency_type = "ETH"
-        url = "https://min-api.cryptocompare.com/data/price?fsym=" + f"{currency_type}" + "&tsyms=BTC,USD,EUR"
+        amount = float(request.GET.get('amount', ''))
+        currency_type = 'ETH'
+        url = 'https://min-api.cryptocompare.com/data/price?fsym=' + f'{currency_type}' + '&tsyms=BTC,USD,EUR'
         try:
             res = requests.get(url=url, headers={'X-Api-Key': settings.API_KEY})
             if res.status_code == 200:
                 res = res.json()
                 global usd
-                usd = res.get("USD", "")
+                usd = res.get('USD', '')
         except:
-            return Response({"message": "please check again later"})
+            return Response({'message': 'please check again later'}, status=500)
         total = usd * amount
         data = {
-            "total": total,
-            "usd": usd
+            'total': total,
+            'usd': usd
         }
-        mumbai_rpc_url = "https://rpc-mumbai.maticvigil.com"
+        mumbai_rpc_url = 'https://rpc-mumbai.maticvigil.com'
         web3 = Web3(Web3.HTTPProvider(mumbai_rpc_url))
         connect = web3.is_connected()
         print(web3)
         if not connect:
             return Response(status=500)
         # user_wallet_balance = web3.eth.get_balance(request.user.wallet_address)
-        user_wallet_balance = web3.eth.get_balance("0x8690F1feff62008A396B31c2C3f380bD0Ca6d8b8")  # TEST
+        user_wallet_balance = web3.eth.get_balance('0x8690F1feff62008A396B31c2C3f380bD0Ca6d8b8')  # TEST
         print(user_wallet_balance)
         if user_wallet_balance < amount:
-            return Response({"message": "YOUR BALANCE IS NOT ENOUGH IN WALLET"})
+            return Response({'message': 'YOUR BALANCE IS NOT ENOUGH IN WALLET'}, status=400)
         with transaction.atomic():
             transaction_user = Transaction.objects.create(
                 amount=amount,
                 amount_swap=usd,
                 wallet=Wallet.objects.get(identifier=request.user.wallet_address),
                 currency_type=currency_type,
-                currency_swap="USD",
+                currency_swap='USD',
                 is_swap=True
             )
             transaction_log_user = TransactionLog.objects.create(
@@ -107,6 +115,7 @@ class FirstStepSwapView(GenericAPIView):
                 amount=amount
             )
         return Response(data)
+
 
 class SecondStepSwapView(GenericAPIView):
     permission_classes = [IsAuthenticatedPanc]
@@ -287,17 +296,17 @@ class TransactionLogListView(GenericAPIView):
 #     serializer_class = SwapSerializer
 #
 #     def post(self, request):
-#         coin_from = request.data.get("coin_from", "")
-#         coin_to = request.data.get("coin_to", "")
+#         coin_from = request.data.get('coin_from', '')
+#         coin_to = request.data.get('coin_to', '')
 #         # check coins price
-#         key_1 = "https://api.binance.com/api/v3/ticker/price?symbol=" + coin_from
-#         key_2 = "https://api.binance.com/api/v3/ticker/price?symbol=" + coin_to
+#         key_1 = 'https://api.binance.com/api/v3/ticker/price?symbol=' + coin_from
+#         key_2 = 'https://api.binance.com/api/v3/ticker/price?symbol=' + coin_to
 #
 #         coin_from_price = (requests.get(key_1)).json()
 #         coin_to_price = (requests.get(key_2)).json()
 #
-#         coin_from_count = int(request.data.get("coin_from_count", ""))
-#         coin_to_count = int(request.data.get("coin_to_count", ""))
+#         coin_from_count = int(request.data.get('coin_from_count', ''))
+#         coin_to_count = int(request.data.get('coin_to_count', ''))
 #
 #         result_coin_from_price = coin_from_count * coin_from_price
 #         result_coin_to_price = coin_to_count * coin_to_price
@@ -306,5 +315,5 @@ class TransactionLogListView(GenericAPIView):
 #             # check user wallet balance
 #             user_wallet_balance = Web3.eth.get_balance(request.user.wallet_address)
 #             if (user_wallet_balance + result_coin_from_price) > result_coin_to_price:
-#                 raise Exception("YOUR BALANCE IS NOT ENOUGH")
+#                 raise Exception('YOUR BALANCE IS NOT ENOUGH')
 #         # TODO CHECK coin_to_count
