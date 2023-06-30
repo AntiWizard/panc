@@ -13,7 +13,7 @@ class BasicSerializer(serializers.Serializer):
 
 class SwapSerializer(BasicSerializer):
     from_type = serializers.ChoiceField(required=False, choices=CurrencyType.CHOICES, default=CurrencyType.ETH)
-    from_amount = serializers.DecimalField(required=False, max_digits=10, decimal_places=3, default=1)
+    from_amount = serializers.DecimalField(required=True, max_digits=10, decimal_places=3)
     to_type = serializers.ChoiceField(required=True, choices=CurrencyType.CHOICES)
 
 

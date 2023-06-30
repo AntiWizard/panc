@@ -15,10 +15,11 @@ STATIC_ROOT = env('APP_STATIC_VOLUME_LOCATION', default='/var/services/panc/stat
 VAULT_PUBLIC_ROOT = env('APP_VAULT_PUBLIC', default='/var/services/panc/vault')
 VAULT_PRIVATE_ROOT = env('APP_VAULT_PRIVATE', default='/var/services/panc/vault')
 
-PRIVATE_KEY = open(VAULT_PRIVATE_ROOT + "/id_rsa").read()
-PUBLIC_KEY = open(VAULT_PUBLIC_ROOT + "/id_rsa.pub").read()
+PRIVATE_KEY = open(VAULT_PRIVATE_ROOT + '/id_rsa').read()
+PUBLIC_KEY = open(VAULT_PUBLIC_ROOT + '/id_rsa.pub').read()
 
 ACCESS_TOKEN_EXP_SECONDS = 1 * 60 * 60
+REFRESH_TOKEN_EXP_SECONDS = 1 * 60 * 60
 
 REDIS_HOST = env('REDIS_HOST', default='localhost')
 REDIS_PORT = env('REDIS_PORT', default=6379)
@@ -30,8 +31,9 @@ CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379')
 CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://localhost:6379')
 
 API_KEY = env('API_KEY')
-CONVERT_API_CURRENCY_V1 = "https://api.api-ninjas.com/v1/cryptoprice"
-# CONVERT_API_CURRENCY_V2 = "https://api.api-ninjas.com/v1/cryptoprice"
+API_KEY_CRYPTOCOMPARE = env('API_KEY_CRYPTOCOMPARE')
+CONVERT_API_CURRENCY_V1 = 'https://min-api.cryptocompare.com/data/price'
+CONVERT_API_CURRENCY_V2 = 'https://api.api-ninjas.com/v1/cryptoprice'
 
 DEBUG = True if IS_DEBUG == 1 else False
 
@@ -43,7 +45,7 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
     ),
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 INSTALLED_APPS = [
@@ -97,11 +99,11 @@ WSGI_APPLICATION = 'wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env("DB_NAME"),
-        'USER': env("DB_USER"),
-        'HOST': env("DB_HOST"),
-        'PORT': env("DB_PORT"),
-        'PASSWORD': env("DB_PASSWORD"),
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'HOST': env('DB_HOST'),
+        'PORT': env('DB_PORT'),
+        'PASSWORD': env('DB_PASSWORD'),
     },
 }
 

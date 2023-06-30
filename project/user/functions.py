@@ -35,4 +35,10 @@ def generate_token_pair_dict(user_id, session_id):
         'user_id': user_id,
         'session_id': session_id,
     }
-    return {'access': generate_secure_token(access_dict)}
+    refresh_dict = {
+        'type': 'refresh',
+        'exp': round(time() + settings.REFRESH_TOKEN_EXP_SECONDS),
+        'user_id': user_id,
+        'session_id': session_id
+    }
+    return {'access': generate_secure_token(access_dict), 'refresh': generate_secure_token(refresh_dict)}

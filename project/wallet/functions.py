@@ -1,10 +1,8 @@
 from django.db import transaction
 from django.utils import timezone
 
-from utils.ex_request import convert_currency_to_usdt
+from utils.ex_request import convert_currency_to_usd
 from wallet.models import CashOutRequest
-
-
 
 
 def process_cashout_request():
@@ -22,7 +20,7 @@ def reject_cashout_reqeust():
     with transaction.atomic():
         for request in cashout_qs:
             wallet_balance = request.wallet.balance
-            balance_from_usd = convert_currency_to_usdt(request.type).get('price')
+            balance_from_usd = convert_currency_to_usd(request.type).get('USD')
             if not balance_from_usd:
                 continue
             balance_usd = balance_from_usd * request.amount

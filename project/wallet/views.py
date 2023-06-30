@@ -8,7 +8,7 @@ from django.conf import settings
 from config.models import GlobalConfig
 from user.models import User
 from user.permissions import IsAuthenticatedPanc
-from utils.ex_request import convert_currency_to_usdt
+from utils.ex_request import convert_currency_to_usd
 from wallet.constants import WalletType, CurrencyType
 from wallet.models import TransactionLog, Wallet, CashOutRequest, Transaction
 from wallet.serializers import CashoutRequestSerializer, SwapSerializer, ConvertToUSDSerializer, SecondSwapSerializer
@@ -24,7 +24,7 @@ class ConvertToUSDView(GenericAPIView):
         if not serializer.is_valid():
             return Response(data={'message': 'BadRequest'}, status=400)
 
-        balance_from = convert_currency_to_usdt(serializer.validated_data['type']).get('price')
+        balance_from = convert_currency_to_usd(serializer.validated_data['type']).get('USD')
 
         if not balance_from:
             return Response(data={'message': 'Internal server error'}, status=500)
@@ -51,8 +51,8 @@ class SwapDefaultView(GenericAPIView):
             return Response(data={'message': 'Internal server error'}, status=500)
         ratio_value = ratio.config_value
 
-        balance_from = convert_currency_to_usdt(CurrencyType.ETH).get('price')
-        balance_to = convert_currency_to_usdt(CurrencyType.BTC).get('price')
+        balance_from = convert_currency_to_usd(CurrencyType.ETH).get('USD')
+        balance_to = convert_currency_to_usd(CurrencyType.BTC).get('USD')
         if not balance_from or not balance_to:
             return Response(data={'message': 'Internal server error'}, status=500)
 
@@ -74,47 +74,47 @@ class FirstStepSwapView(GenericAPIView):
     serializer_class = SwapSerializer
 
     def get(self, request):
-        amount = float(request.GET.get('amount', ''))
-        currency_type = 'ETH'
-        url = 'https://min-api.cryptocompare.com/data/price?fsym=' + f'{currency_type}' + '&tsyms=BTC,USD,EUR'
-        try:
-            res = requests.get(url=url, headers={'X-Api-Key': settings.API_KEY})
-            if res.status_code == 200:
-                res = res.json()
-                global usd
-                usd = res.get('USD', '')
-        except:
-            return Response({'message': 'please check again later'}, status=500)
-        total = usd * amount
-        data = {
-            'total': total,
-            'usd': usd
-        }
+        data = request.data if request.data else {}
+        serializer = SwapSerializer(data=data)
+        if not serializer.is_valid():
+            return Response({'message': 'Bad Request'}, status=400)
+
+        admin_wallet = GlobalConfig.objects.filter(config_name='ADMIN_WALLET', is_active=True).first()
+        if not admin_wallet:
+            return Response({'message': 'Internal server error'}, status=500)
+
+        user = User.objects.filter(id=request.user_id, is_active=True).first()
+        if not user:
+            return Response({'message': 'Bad Request'}, status=400)
+
+        from_balance_usd = convert_currency_to_usd(serializer.validated_data['from_type']).get('USD')
+        # to_balance_usd = convert_currency_to_usd(serializer.validated_data['to_type']).get('USD')
+
         mumbai_rpc_url = 'https://rpc-mumbai.maticvigil.com'
         web3 = Web3(Web3.HTTPProvider(mumbai_rpc_url))
         connect = web3.is_connected()
-        print(web3)
         if not connect:
             return Response(status=500)
-        # user_wallet_balance = web3.eth.get_balance(request.user.wallet_address)
-        user_wallet_balance = web3.eth.get_balance('0x8690F1feff62008A396B31c2C3f380bD0Ca6d8b8')  # TEST
-        print(user_wallet_balance)
-        if user_wallet_balance < amount:
+        user_wallet_balance = web3.eth.get_balance(user.wallet_address)
+
+        if user_wallet_balance < serializer.validated_data['from_amount']:
             return Response({'message': 'YOUR BALANCE IS NOT ENOUGH IN WALLET'}, status=400)
-        with transaction.atomic():
-            transaction_user = Transaction.objects.create(
-                amount=amount,
-                amount_swap=usd,
-                wallet=Wallet.objects.get(identifier=request.user.wallet_address),
-                currency_type=currency_type,
-                currency_swap='USD',
-                is_swap=True
-            )
-            transaction_log_user = TransactionLog.objects.create(
-                wallet=Wallet.objects.get(identifier=request.user.wallet_address),
-                amount=amount
-            )
-        return Response(data)
+
+        data = {}
+        Transaction.objects.create(
+            amount=serializer.validated_data['from_amount'],
+            amount_swap=from_balance_usd,
+            wallet=Wallet.objects.get(identifier=request.user.wallet_address),
+            currency_type=serializer.validated_data['to_type'],
+            currency_swap=CurrencyType.USD,
+            is_swap=True
+        )
+        data['tx'] = {
+            'from': user.wallet_address, 'to': admin_wallet,
+            'amount': web3.to_wei(serializer.validated_data['from_amount'], 'ether')
+        }
+
+        return Response(data={'message': 'OK', 'data': data}, status=200)
 
 
 class SecondStepSwapView(GenericAPIView):
@@ -242,7 +242,7 @@ class CashoutDetailView(GenericAPIView):
 
         wallet_obj = wallet_qs.first()
 
-        balance_from_usd = convert_currency_to_usdt(serializer.validated_data['type']).get('price')
+        balance_from_usd = convert_currency_to_usd(serializer.validated_data['type']).get('USD')
 
         if not balance_from_usd:
             return Response(data={'message': 'Internal server error'}, status=500)
@@ -290,30 +290,3 @@ class TransactionLogListView(GenericAPIView):
             })
 
         return Response(data={'message': 'OK', 'data': data}, status=200)
-
-# class TransactionView(GenericAPIView):
-#     permission_classes = [IsAuthenticatedPanc]
-#     serializer_class = SwapSerializer
-#
-#     def post(self, request):
-#         coin_from = request.data.get('coin_from', '')
-#         coin_to = request.data.get('coin_to', '')
-#         # check coins price
-#         key_1 = 'https://api.binance.com/api/v3/ticker/price?symbol=' + coin_from
-#         key_2 = 'https://api.binance.com/api/v3/ticker/price?symbol=' + coin_to
-#
-#         coin_from_price = (requests.get(key_1)).json()
-#         coin_to_price = (requests.get(key_2)).json()
-#
-#         coin_from_count = int(request.data.get('coin_from_count', ''))
-#         coin_to_count = int(request.data.get('coin_to_count', ''))
-#
-#         result_coin_from_price = coin_from_count * coin_from_price
-#         result_coin_to_price = coin_to_count * coin_to_price
-#
-#         if result_coin_to_price > result_coin_from_price:
-#             # check user wallet balance
-#             user_wallet_balance = Web3.eth.get_balance(request.user.wallet_address)
-#             if (user_wallet_balance + result_coin_from_price) > result_coin_to_price:
-#                 raise Exception('YOUR BALANCE IS NOT ENOUGH')
-#         # TODO CHECK coin_to_count
