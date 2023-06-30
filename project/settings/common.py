@@ -35,6 +35,8 @@ API_KEY_CRYPTOCOMPARE = env('API_KEY_CRYPTOCOMPARE')
 CONVERT_API_CURRENCY_V1 = 'https://min-api.cryptocompare.com/data/price'
 CONVERT_API_CURRENCY_V2 = 'https://api.api-ninjas.com/v1/cryptoprice'
 
+INFURA_API = 'https://mainnet.infura.io/v3/'
+
 DEBUG = True if IS_DEBUG == 1 else False
 
 ALLOWED_HOSTS = ['*']

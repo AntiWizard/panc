@@ -10,8 +10,9 @@ def convert_currency_to_usd(src_symbol, des_symbol=CurrencyType.USD):
     if src_symbol.lower() not in CURRENCY_TYPE_LIST:
         return
 
-    url = 'https://min-api.cryptocompare.com/data/price' + f'?fsym={src_symbol}&tsyms={des_symbol}'
+    url = f'{settings.CONVERT_API_CURRENCY_V1}?fsym={src_symbol}&tsyms={des_symbol}'
     url += f'&api_key={settings.API_KEY_CRYPTOCOMPARE}'
+
     data = {}
     try:
         response = requests.get(url=url)

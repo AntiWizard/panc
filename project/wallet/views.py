@@ -90,11 +90,17 @@ class FirstStepSwapView(GenericAPIView):
         from_balance_usd = convert_currency_to_usd(serializer.validated_data['from_type']).get('USD')
         # to_balance_usd = convert_currency_to_usd(serializer.validated_data['to_type']).get('USD')
 
-        mumbai_rpc_url = 'https://rpc-mumbai.maticvigil.com'
-        web3 = Web3(Web3.HTTPProvider(mumbai_rpc_url))
+        infura_key = GlobalConfig.objects.filter(config_name='INFURA_API_KEY', is_active=True).first()
+        if not infura_key:
+            return Response({'message': 'Internal server error'}, status=500)
+
+        infura_url = f'{settings.INFURA_API}{infura_key.config_value}'
+        web3 = Web3(Web3.HTTPProvider(infura_url))
+
         connect = web3.is_connected()
         if not connect:
             return Response(status=500)
+
         user_wallet_balance = web3.eth.get_balance(user.wallet_address)
 
         if user_wallet_balance < serializer.validated_data['from_amount']:
