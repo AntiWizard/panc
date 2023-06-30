@@ -14,13 +14,13 @@ class AbstractBaseModelWithUUidAsPk(models.Model):
 
 
 class User(AbstractBaseModelWithUUidAsPk):
-    wallet_address = models.CharField(max_length=42, unique=True, editable=False, validators=[validate_eth_address])
+    wallet_address = models.CharField(max_length=42, unique=True, validators=[validate_eth_address])
 
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
 
     def __str__(self):
-        return self.id
+        return str(self.id)
 
 
 class UserSession(models.Model):
@@ -33,4 +33,4 @@ class UserSession(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
 
     def __str__(self):
-        return self.id
+        return str(self.id)

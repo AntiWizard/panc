@@ -20,7 +20,7 @@ class RoundInfo(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
 
     def __str__(self):
-        return self.number
+        return str(self.number)
 
 
 class Ticket(AbstractBaseModelWithUUidAsPk):
@@ -32,7 +32,7 @@ class Ticket(AbstractBaseModelWithUUidAsPk):
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
 
     def __str__(self):
-        return self.id + " > " + self.round.number
+        return f'{self.id} + " > " + {self.round.number}'
 
 
 class RoundDetail(models.Model):
@@ -45,7 +45,7 @@ class RoundDetail(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
 
     def __str__(self):
-        return self.round.number
+        return str(self.round.number)
 
 
 class RoundWinners(models.Model):
@@ -58,4 +58,4 @@ class RoundWinners(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
 
     def __str__(self):
-        return self.round.number
+        return str(self.round.number)

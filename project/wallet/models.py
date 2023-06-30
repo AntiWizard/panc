@@ -12,7 +12,7 @@ class Wallet(AbstractBaseModelWithUUidAsPk):  # wallet site
     flagged_wallet = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.identifier
+        return str(self.identifier)
 
     class Meta:
         UniqueConstraint('identifier', 'wallet_type', name="unique_identifier_wallet_type")
