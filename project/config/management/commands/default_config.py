@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from django.conf import settings
 
 from config.models import GlobalConfig
 
@@ -17,7 +18,11 @@ class Command(BaseCommand):
                 'RATIO_WIN_6': 40,
                 'BURN_RATIO': 20,
                 'SWAP_RATIO': 0.5,
+                'ADMIN_WALLET': '',
+                'INFURA_API_KEY': settings.INFURA_API_KEY,
+                'API_KEY_CRYPTOCOMPARE': settings.API_KEY_CRYPTOCOMPARE
             }
+
             global_config_qs = GlobalConfig.objects.filter(is_active=True).all()
             global_configs = {config.config_name: config.config_value for config in global_config_qs}
             duplicate_list = []

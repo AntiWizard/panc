@@ -30,12 +30,13 @@ SECRET_KEY = env('SECRET_KEY', default='DUMMY_KEY')
 CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379')
 CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://localhost:6379')
 
-API_KEY = env('API_KEY')
-API_KEY_CRYPTOCOMPARE = env('API_KEY_CRYPTOCOMPARE')
+API_KEY = env('API_KEY', default='')
+API_KEY_CRYPTOCOMPARE = env('API_KEY_CRYPTOCOMPARE', default='')
 CONVERT_API_CURRENCY_V1 = 'https://min-api.cryptocompare.com/data/price'
 CONVERT_API_CURRENCY_V2 = 'https://api.api-ninjas.com/v1/cryptoprice'
 
 INFURA_API = 'https://mainnet.infura.io/v3/'
+INFURA_API_KEY = env('INFURA_API_KEY', default='')
 
 DEBUG = True if IS_DEBUG == 1 else False
 
@@ -101,11 +102,11 @@ WSGI_APPLICATION = 'wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DB_NAME'),
-        'USER': env('DB_USER'),
-        'HOST': env('DB_HOST'),
-        'PORT': env('DB_PORT'),
-        'PASSWORD': env('DB_PASSWORD'),
+        'NAME': env('DB_NAME', default=''),
+        'USER': env('DB_USER', default=''),
+        'HOST': env('DB_HOST', default=''),
+        'PORT': env('DB_PORT', default=''),
+        'PASSWORD': env('DB_PASSWORD', default=''),
     },
 }
 
