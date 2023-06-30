@@ -26,7 +26,7 @@ class RoundInfo(models.Model):
 class Ticket(AbstractBaseModelWithUUidAsPk):
     round = models.ForeignKey(to=RoundInfo, on_delete=models.CASCADE)
     user = models.ForeignKey(to=User, on_delete=models.DO_NOTHING)
-    number = models.CharField(max_length=6, editable=False, validators=[MaxLengthValidator(6), MinLengthValidator(6)])
+    number = models.CharField(max_length=6, validators=[MaxLengthValidator(6), MinLengthValidator(6)])
 
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)

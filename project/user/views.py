@@ -64,9 +64,9 @@ def logout(request):
         return Response(data={'message': 'Bad request'}, status=400)
 
     try:
-        token_data = jwt.decode(serializer.validated_data['access'], settings.PUBLIC_KEY, algorithms=['RS256'],
+        token_data = jwt.decode(serializer.validated_data['refresh'], settings.PUBLIC_KEY, algorithms=['RS256'],
                                 leeway=5)
-        if 'type' in token_data.keys() and token_data['type'] == 'access':
+        if 'type' in token_data.keys() and token_data['type'] == 'refresh':
             session_id = token_data['session_id']
 
             session_query_res = UserSession.objects.filter(session_id=session_id, is_active=True)

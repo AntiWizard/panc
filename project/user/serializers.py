@@ -17,7 +17,7 @@ class VerifyLoginSerializer(BasicSerializer):
 
 
 class LogoutSerializer(BasicSerializer):
-    access = serializers.CharField(max_length=1500, required=True)
+    refresh = serializers.CharField(max_length=1500, required=True)
 
 
 class TokenRefreshSerializer(BasicSerializer):

@@ -14,19 +14,19 @@ class RoundInfoAdmin(admin.ModelAdmin):
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
     list_display = ['id', 'round', 'user', 'number', 'is_active', 'created_at']
-    search_fields = ['user', 'round', 'number']
+    search_fields = ['user', 'round__number', 'number']
     list_filter = ['is_active']
 
 
 @admin.register(RoundDetail)
 class RoundDetailAdmin(admin.ModelAdmin):
-    list_display = ['id', 'count', 'round', 'type', 'total_amount']
-    search_fields = ['round', 'type']
+    list_display = ['id', 'count', 'round', 'ratio', 'type', 'total_amount']
+    search_fields = ['round__number']
     list_filter = ['type']
 
 
 @admin.register(RoundWinners)
 class RoundWinnersAdmin(admin.ModelAdmin):
     list_display = ['id', 'winner_count', 'type', 'round', 'is_processed']
-    search_fields = ['round']
+    search_fields = ['round__number']
     list_filter = ['is_processed', 'type']

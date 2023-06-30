@@ -14,14 +14,14 @@ app.autodiscover_tasks()
 app.conf.beat_schedule = {
     'lottery_process_job': {
         'task': 'lottery.tasks.lottery_process_job',
-        'schedule': crontab(hour='*/4'),
+        'schedule': crontab(minute='0', hour='0'),
     },
     'check_if_not_winner_processed_job': {
         'task': 'lottery.tasks.check_if_not_winner_processed_job',
-        'schedule': crontab(minute='30', hour='*/2'),
+        'schedule': crontab(minute='0', hour='*'),
     },
     'reject_cashout_reqeust_job': {
         'task': 'wallet.tasks.reject_cashout_reqeust_job',
-        'schedule': crontab(minute='30', hour='*/2'),
+        'schedule': crontab(minute='0', hour='*/2'),
     },
 }

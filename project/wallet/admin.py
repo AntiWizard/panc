@@ -26,6 +26,6 @@ class TransactionAdmin(admin.ModelAdmin):
 
 @admin.register(TransactionLog)
 class TransactionLogAdmin(admin.ModelAdmin):
-    list_display = ['id', 'wallet', 'amount', 'temp_transaction_ref', 'transaction_type', 'created_at']
+    list_display = ['id', 'transaction_type', 'amount', 'wallet', 'temp_transaction_ref', 'created_at']
     search_fields = ['wallet', 'temp_transaction_ref']
     list_filter = ['transaction_type']

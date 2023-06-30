@@ -14,7 +14,6 @@ class IsAuthenticatedPanc(permissions.BasePermission):
             if 'type' in token_data.keys() and token_data['type'] == 'access':
                 request.user_id = token_data['user_id']
                 request.session_id = token_data['session_id']
-
                 return True
             return False
         except:
