@@ -20,7 +20,7 @@ if [ "$1" == "gunicorn" ]; then
 
   python3 /opt/project/manage.py default_config
 
-  exec  gunicorn --bind 0.0.0.0:8000 --chdir /opt/project --log-level='info' --log-file=- --workers $GUNICORN_WORKER project.wsgi:application
+  exec gunicorn --bind 0.0.0.0:8000 --chdir /opt/project --log-level='info' --log-file=- --workers $GUNICORN_WORKER project.wsgi:application
 
 elif [ "$1" == "celery" ]; then
   cd /opt/project

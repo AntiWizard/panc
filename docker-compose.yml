@@ -66,6 +66,20 @@ services:
       - db
     networks:
       - main
+  nginx:
+    build: ./nginx
+    image: "nginx:1-alpine"
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - "/var/services/panc/media:/var/services/panc/media"
+      - "/var/services/panc/static:/var/services/panc/static"
+    depends_on:
+      - web
+    networks:
+      - main
 
 networks:
   main:
