@@ -1,7 +1,7 @@
-from pathlib import Path
 import os
-import environ
+from pathlib import Path
 
+import environ
 import redis
 
 env = environ.Env()
@@ -71,6 +71,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+CSRF_TRUSTED_ORIGINS = env('CSRF_TRUSTED_ORIGINS', default='http://*')
 
 ROOT_URLCONF = 'urls'
 
