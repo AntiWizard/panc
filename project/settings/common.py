@@ -40,7 +40,7 @@ INFURA_API_KEY = env('INFURA_API_KEY', default='')
 
 DEBUG = True if IS_DEBUG == 1 else False
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['http://panc', 'localhost', '127.0.0.1', '0.0.0.0']
 
 MEDIA_BASE_URL = '/media'
 
@@ -71,8 +71,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-CORS_ORIGIN_WHITELIST = ['http://0.0.0.0']
 
 ROOT_URLCONF = 'urls'
 

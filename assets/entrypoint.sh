@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#DJANGO_SUPERUSER_PASSWORD=$SUPER_USER_PASSWORD python /opt/project/manage.py createsuperuser --username $SUPER_USER_NAME --email $SUPER_USER_EMAIL --noinput
+DJANGO_SUPERUSER_PASSWORD=$SUPER_USER_PASSWORD python /opt/project/manage.py createsuperuser --username $SUPER_USER_NAME --email $SUPER_USER_EMAIL --noinput
 
 if [ "$1" == "gunicorn" ]; then
   echo "Running collect static ..."
