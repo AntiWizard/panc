@@ -1,10 +1,11 @@
 import decimal
+
+from django.conf import settings
 from django.db import transaction
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-import requests
 from web3 import Web3
-from django.conf import settings
+
 from config.models import GlobalConfig
 from user.models import User
 from user.permissions import IsAuthenticatedPanc
@@ -101,7 +102,11 @@ class FirstStepSwapView(GenericAPIView):
         if not connect:
             return Response(status=500)
 
-        user_wallet_balance = web3.eth.get_balance(user.wallet_address)
+        try:
+            check_user_address = web3.to_checksum_address(user.wallet_address)
+            user_wallet_balance = web3.eth.get_balance(check_user_address)
+        except:
+            return Response({'message': 'Bad Request'}, status=500)
 
         if user_wallet_balance < serializer.validated_data['from_amount']:
             return Response({'message': 'YOUR BALANCE IS NOT ENOUGH IN WALLET'}, status=400)
