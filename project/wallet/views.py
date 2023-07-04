@@ -111,6 +111,19 @@ class FirstStepSwapView(GenericAPIView):
         if user_wallet_balance < serializer.validated_data['from_amount']:
             return Response({'message': 'YOUR BALANCE IS NOT ENOUGH IN WALLET'}, status=400)
 
+        # Get the current gas price
+        gas_price = web3.eth.gas_price
+
+        # Create a new transaction object with the receiver address as the recipient
+        transaction = {
+            'to': admin_wallet,
+            'value': web3.to_wei(serializer.validated_data['from_amount'], 'ether'),  # 1 ETH in Wei
+            'gas': 21000,
+            'gasPrice': gas_price,
+            'nonce': web3.eth.get_transaction('0x' + user.wallet_address)
+        }
+        # Sign the transaction with your private key
+        signed_tx = web3.eth.account.sign_transaction(transaction, 'YOUR_PRIVATE_KEY')  # TODO GET PRIVATE KEY FROM ADMIN
         data = {}
         Transaction.objects.create(
             amount=serializer.validated_data['from_amount'],
@@ -120,9 +133,14 @@ class FirstStepSwapView(GenericAPIView):
             currency_swap=CurrencyType.USD,
             is_swap=True
         )
+        TransactionLog.objects.create(
+            wallet=user.wallet_address,
+            amount=serializer.validated_data['from_type']
+        )
         data['tx'] = {
             'from': user.wallet_address, 'to': admin_wallet,
-            'amount': web3.to_wei(serializer.validated_data['from_amount'], 'ether')
+            'amount': web3.to_wei(serializer.validated_data['from_amount'], 'ether'),
+            'confirm': signed_tx
         }
 
         return Response(data={'message': 'OK', 'data': data}, status=200)
