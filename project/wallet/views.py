@@ -31,7 +31,8 @@ class ConvertToUSDView(GenericAPIView):
             return Response(data={'message': 'Internal server error'}, status=500)
 
         return Response(
-            data={'message': 'OK', 'data': {'price': decimal.Decimal(balance_from) * serializer.validated_data['amount']}},
+            data={'message': 'OK',
+                  'data': {'price': round(decimal.Decimal(str(balance_from)) * serializer.validated_data['amount'], 10)}},
             status=200)
 
 
@@ -50,21 +51,21 @@ class SwapDefaultView(GenericAPIView):
         ratio = GlobalConfig.objects.filter(config_name='SWAP_RATIO').first()
         if not ratio:
             return Response(data={'message': 'Internal server error'}, status=500)
-        ratio_value = ratio.config_value
+        ratio_value = float(ratio.config_value)
 
         balance_from = convert_currency_to_usd(CurrencyType.ETH).get('USD')
         balance_to = convert_currency_to_usd(CurrencyType.BTC).get('USD')
         if not balance_from or not balance_to:
             return Response(data={'message': 'Internal server error'}, status=500)
 
-        ratio_balance = (balance_from / balance_to) * (ratio_value / 100)
+        ratio_balance = round((balance_from / balance_to) * (ratio_value / 100), 10)
         data = {
             'from_type': CurrencyType.ETH,
             'to_type': CurrencyType.BTC,
             'from_amount': 1,
             'ratio': ratio_value,
             'ratio_balance': ratio_balance,
-            'to_amount': (balance_from / balance_to) * ((100 - ratio_value) / 100),
+            'to_amount': round((balance_from / balance_to) * ((100 - ratio_value) / 100), 10),
         }
 
         return Response(data={'message': 'OK', 'data': data}, status=200)
