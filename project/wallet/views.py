@@ -124,6 +124,9 @@ class FirstStepSwapView(GenericAPIView):
         }
         # Sign the transaction with your private key
         signed_tx = web3.eth.account.sign_transaction(transaction, 'YOUR_PRIVATE_KEY')  # TODO GET PRIVATE KEY FROM ADMIN
+        # Send tx and wait for receipt
+        tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
         data = {}
         Transaction.objects.create(
             amount=serializer.validated_data['from_amount'],
@@ -140,7 +143,7 @@ class FirstStepSwapView(GenericAPIView):
         data['tx'] = {
             'from': user.wallet_address, 'to': admin_wallet,
             'amount': web3.to_wei(serializer.validated_data['from_amount'], 'ether'),
-            'confirm': signed_tx
+            'confirm': tx_receipt.transactionHash.hex()
         }
 
         return Response(data={'message': 'OK', 'data': data}, status=200)
