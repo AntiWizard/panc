@@ -1,7 +1,6 @@
 import decimal
 
 from django.db import transaction
-from django.db.models import F
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 
@@ -52,7 +51,7 @@ class BuyTicketView(GenericAPIView):
             round_info.ticket_count += 1
             round_info.total_price += round_info.ticket_amount
             round_info.burn_amount += (
-                        round_info.ticket_amount * decimal.Decimal(str(float(burn_ratio_obj.config_value) / 100)))
+                    round_info.ticket_amount * decimal.Decimal(str(float(burn_ratio_obj.config_value) / 100)))
             round_info.save()
 
             wallet_user.balance -= round_info.ticket_amount
