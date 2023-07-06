@@ -116,6 +116,7 @@ class FirstStepSwapView(GenericAPIView):
         gas_price = web3.eth.gas_price
 
         # Create a new transaction object with the receiver address as the recipient
+        admin_private_key = GlobalConfig.objects.filter(config_name='ADMIN_PRIVATE_KEY', is_active=True).first()
         transaction = {
             'to': admin_wallet,
             'value': web3.to_wei(serializer.validated_data['from_amount'], 'ether'),  # 1 ETH in Wei
@@ -124,7 +125,7 @@ class FirstStepSwapView(GenericAPIView):
             'nonce': web3.eth.get_transaction('0x' + user.wallet_address)
         }
         # Sign the transaction with your private key
-        signed_tx = web3.eth.account.sign_transaction(transaction, 'YOUR_PRIVATE_KEY')  # TODO GET PRIVATE KEY FROM ADMIN
+        signed_tx = web3.eth.account.sign_transaction(transaction, admin_private_key)
         # Send tx and wait for receipt
         tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
         tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
@@ -135,6 +136,7 @@ class FirstStepSwapView(GenericAPIView):
             wallet=Wallet.objects.get(identifier=request.user.wallet_address),
             currency_type=serializer.validated_data['to_type'],
             currency_swap=CurrencyType.USD,
+            confirm=tx_receipt,
             is_swap=True
         )
         TransactionLog.objects.create(

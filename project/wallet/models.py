@@ -55,6 +55,7 @@ class Transaction(AbstractBaseModelWithUUidAsPk):
     currency_type = models.CharField(max_length=5, choices=CurrencyType.CHOICES, default=CurrencyType.USD)
     currency_swap = models.CharField(max_length=5, choices=CurrencyType.CHOICES, default=None, null=True,
                                      blank=True)
+    confirm = models.JSONField(verbose_name='confirm', )
 
     status = models.CharField(max_length=10, choices=TransactionStatus.CHOICES, default=TransactionStatus.PENDING)
     is_swap = models.BooleanField(default=False)
