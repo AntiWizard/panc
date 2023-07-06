@@ -75,7 +75,7 @@ class FirstStepSwapView(GenericAPIView):
     permission_classes = [IsAuthenticatedPanc]
     serializer_class = SwapSerializer
 
-    def get(self, request):
+    def post(self, request):
         data = request.data if request.data else {}
         serializer = SwapSerializer(data=data)
         if not serializer.is_valid():
@@ -150,50 +150,50 @@ class FirstStepSwapView(GenericAPIView):
         return Response(data={'message': 'OK', 'data': data}, status=200)
 
 
-class SecondStepSwapView(GenericAPIView):
-    permission_classes = [IsAuthenticatedPanc]
-    serializer_class = SecondSwapSerializer
-
-    def post(self, request):
-        data = request.data if request.data else {}
-        serializer = SecondSwapSerializer(data=data)
-
-        if not serializer.is_valid():
-            return Response(data={'message': 'BadRequest'}, status=400)
-        user_id = request.user_id
-        user = User.objects.filter(id=user_id).first()
-        if not user:
-            return Response(data={'message': 'Internal server error'}, status=500)
-        wallet_address = Wallet.objects.get(identifier=user.wallet_address)
-        with transaction.atomic():
-            payment_to_main_wallet = Wallet.objects.select_for_update().get(wallet_type=WalletType.MAIN)
-            payment_to_main_wallet.balance += serializer.validated_data['ratio_balance']
-            payment_to_main_wallet.save()
-            transaction_user = Transaction.objects.create(
-                amount=serializer.validated_data['from_amount'],
-                amount_swap=serializer.validated_data['to_amount'],
-                wallet=wallet_address,
-                currency_type=serializer.validated_data['from_type'],
-                currency_swap=serializer.validated_data['to_type'],
-                is_swap=True
-            )
-            transaction_log_user = TransactionLog.objects.create(
-                wallet=wallet_address,
-                amount=serializer.validated_data['from_amount']
-            )
-            transaction_site = Transaction.objects.create(
-                amount=serializer.validated_data['to_amount'],
-                amount_swap=serializer.validated_data['from_amount'],
-                wallet=payment_to_main_wallet,
-                currency_type=serializer.validated_data['to_type'],
-                currency_swap=serializer.validated_data['from_type'],
-                is_swap=True
-            )
-            transaction_log_site = TransactionLog.objects.create(
-                wallet=payment_to_main_wallet,
-                amount=serializer.validated_data['to_amount']
-            )
-        return Response(data={'message': 'Your transaction is done'}, status=200)
+# class SecondStepSwapView(GenericAPIView):
+#     permission_classes = [IsAuthenticatedPanc]
+#     serializer_class = SecondSwapSerializer
+#
+#     def post(self, request):
+#         data = request.data if request.data else {}
+#         serializer = SecondSwapSerializer(data=data)
+#
+#         if not serializer.is_valid():
+#             return Response(data={'message': 'BadRequest'}, status=400)
+#         user_id = request.user_id
+#         user = User.objects.filter(id=user_id).first()
+#         if not user:
+#             return Response(data={'message': 'Internal server error'}, status=500)
+#         wallet_address = Wallet.objects.get(identifier=user.wallet_address)
+#         with transaction.atomic():
+#             payment_to_main_wallet = Wallet.objects.select_for_update().get(wallet_type=WalletType.MAIN)
+#             payment_to_main_wallet.balance += serializer.validated_data['ratio_balance']
+#             payment_to_main_wallet.save()
+#             transaction_user = Transaction.objects.create(
+#                 amount=serializer.validated_data['from_amount'],
+#                 amount_swap=serializer.validated_data['to_amount'],
+#                 wallet=wallet_address,
+#                 currency_type=serializer.validated_data['from_type'],
+#                 currency_swap=serializer.validated_data['to_type'],
+#                 is_swap=True
+#             )
+#             transaction_log_user = TransactionLog.objects.create(
+#                 wallet=wallet_address,
+#                 amount=serializer.validated_data['from_amount']
+#             )
+#             transaction_site = Transaction.objects.create(
+#                 amount=serializer.validated_data['to_amount'],
+#                 amount_swap=serializer.validated_data['from_amount'],
+#                 wallet=payment_to_main_wallet,
+#                 currency_type=serializer.validated_data['to_type'],
+#                 currency_swap=serializer.validated_data['from_type'],
+#                 is_swap=True
+#             )
+#             transaction_log_site = TransactionLog.objects.create(
+#                 wallet=payment_to_main_wallet,
+#                 amount=serializer.validated_data['to_amount']
+#             )
+#         return Response(data={'message': 'Your transaction is done'}, status=200)
 
 
 class CashoutListView(GenericAPIView):
