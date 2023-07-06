@@ -97,59 +97,59 @@ class FirstStepSwapView(GenericAPIView):
             return Response({'message': 'Internal server error'}, status=500)
 
         infura_url = f'{settings.INFURA_API}{infura_key.config_value}'
-        web3 = Web3(Web3.HTTPProvider(infura_url))
-
-        connect = web3.is_connected()
-        if not connect:
-            return Response(status=500)
-
         try:
-            check_user_address = web3.to_checksum_address(user.wallet_address)
-            user_wallet_balance = web3.eth.get_balance(check_user_address)
+            web3 = Web3(Web3.HTTPProvider(infura_url))
+
+            connect = web3.is_connected()
+            if not connect:
+                return Response(status=500)
+
+            try:
+                check_user_address = web3.to_checksum_address(user.wallet_address)
+                user_wallet_balance = web3.eth.get_balance(check_user_address)
+            except:
+                return Response({'message': 'Bad Request'}, status=500)
+
+            if user_wallet_balance < serializer.validated_data['from_amount']:
+                return Response({'message': 'YOUR BALANCE IS NOT ENOUGH IN WALLET'}, status=400)
+
+            # Get the current gas price
+            gas_price = web3.eth.gas_price
+
+            # Create a new transaction object with the receiver address as the recipient
+            admin_private_key = GlobalConfig.objects.filter(config_name='ADMIN_PRIVATE_KEY', is_active=True).first()
+            transaction = {
+                'to': admin_wallet,
+                'value': web3.to_wei(serializer.validated_data['from_amount'], 'ether'),  # 1 ETH in Wei
+                'gas': 21000,
+                'gasPrice': gas_price,
+                'nonce': web3.eth.get_transaction('0x' + user.wallet_address)
+            }
+            trans = Transaction.objects.create(
+                amount=serializer.validated_data['from_amount'],
+                amount_swap=from_balance_usd,
+                wallet=Wallet.objects.get(identifier=request.user.wallet_address),
+                currency_type=serializer.validated_data['to_type'],
+                currency_swap=CurrencyType.USD,
+                is_swap=True
+            )
+            # Sign the transaction with your private key
+            signed_tx = web3.eth.account.sign_transaction(transaction, admin_private_key)
+            # Send tx and wait for receipt
+            tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+            tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+            # add confirm to trans
+            trans.objects.update(confirm=tx_receipt)
+
+            data['tx'] = {
+                'from': user.wallet_address, 'to': admin_wallet,
+                'amount': web3.to_wei(serializer.validated_data['from_amount'], 'ether'),
+                'confirm': tx_receipt.transactionHash.hex()
+            }
+
+            return Response(data={'message': 'OK', 'data': data}, status=200)
         except:
-            return Response({'message': 'Bad Request'}, status=500)
-
-        if user_wallet_balance < serializer.validated_data['from_amount']:
-            return Response({'message': 'YOUR BALANCE IS NOT ENOUGH IN WALLET'}, status=400)
-
-        # Get the current gas price
-        gas_price = web3.eth.gas_price
-
-        # Create a new transaction object with the receiver address as the recipient
-        admin_private_key = GlobalConfig.objects.filter(config_name='ADMIN_PRIVATE_KEY', is_active=True).first()
-        transaction = {
-            'to': admin_wallet,
-            'value': web3.to_wei(serializer.validated_data['from_amount'], 'ether'),  # 1 ETH in Wei
-            'gas': 21000,
-            'gasPrice': gas_price,
-            'nonce': web3.eth.get_transaction('0x' + user.wallet_address)
-        }
-        # Sign the transaction with your private key
-        signed_tx = web3.eth.account.sign_transaction(transaction, admin_private_key)
-        # Send tx and wait for receipt
-        tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
-        tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
-        data = {}
-        Transaction.objects.create(
-            amount=serializer.validated_data['from_amount'],
-            amount_swap=from_balance_usd,
-            wallet=Wallet.objects.get(identifier=request.user.wallet_address),
-            currency_type=serializer.validated_data['to_type'],
-            currency_swap=CurrencyType.USD,
-            confirm=tx_receipt,
-            is_swap=True
-        )
-        TransactionLog.objects.create(
-            wallet=user.wallet_address,
-            amount=serializer.validated_data['from_type']
-        )
-        data['tx'] = {
-            'from': user.wallet_address, 'to': admin_wallet,
-            'amount': web3.to_wei(serializer.validated_data['from_amount'], 'ether'),
-            'confirm': tx_receipt.transactionHash.hex()
-        }
-
-        return Response(data={'message': 'OK', 'data': data}, status=200)
+            return Response({'message': 'Server error'}, status=500)
 
 
 # class SecondStepSwapView(GenericAPIView):
