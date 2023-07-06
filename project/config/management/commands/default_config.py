@@ -26,6 +26,7 @@ class Command(BaseCommand):
                 'FAKE_ROUND_PRICE': 0,
                 'TICKET_AMOUNT': 50,
                 'ADMIN_WALLET': '',
+                'PRIVATE_KEY': '',
                 'INFURA_API_KEY': settings.INFURA_API_KEY,
                 'API_KEY_CRYPTOCOMPARE': settings.API_KEY_CRYPTOCOMPARE
             }
