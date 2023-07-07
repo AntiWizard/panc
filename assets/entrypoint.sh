@@ -1,7 +1,5 @@
 #!/bin/bash
 
-DJANGO_SUPERUSER_PASSWORD=$SUPER_USER_PASSWORD python /opt/project/manage.py createsuperuser --username $SUPER_USER_NAME --email $SUPER_USER_EMAIL --noinput
-
 if [ "$1" == "gunicorn" ]; then
   echo "Running collect static ..."
   python /opt/project/manage.py collectstatic --noinput
@@ -21,6 +19,8 @@ if [ "$1" == "gunicorn" ]; then
   fi
 
   python3 /opt/project/manage.py default_config
+
+  DJANGO_SUPERUSER_PASSWORD=$SUPER_USER_PASSWORD python /opt/project/manage.py createsuperuser --username $SUPER_USER_NAME --email $SUPER_USER_EMAIL --noinput
 
   exec gunicorn --bind 0.0.0.0:80 --chdir /opt/project --log-level='info' --log-file=- --workers $GUNICORN_WORKER project.wsgi:application
 
