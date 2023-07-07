@@ -9,6 +9,7 @@ class RoundInfoAdmin(admin.ModelAdmin):
                     'is_done', 'created_at']
     search_fields = ['number', 'ticket_goal']
     list_filter = ['is_done']
+    ordering = ['-number']
 
 
 @admin.register(Ticket)
@@ -16,6 +17,7 @@ class TicketAdmin(admin.ModelAdmin):
     list_display = ['id', 'round', 'user', 'number', 'is_active', 'created_at']
     search_fields = ['user', 'round__number', 'number']
     list_filter = ['is_active']
+    ordering = ['-created_at']
 
 
 @admin.register(RoundDetail)
@@ -23,6 +25,7 @@ class RoundDetailAdmin(admin.ModelAdmin):
     list_display = ['id', 'count', 'round', 'ratio', 'type', 'total_amount']
     search_fields = ['round__number']
     list_filter = ['type']
+    ordering = ['-round__number']
 
 
 @admin.register(RoundWinners)
@@ -30,3 +33,4 @@ class RoundWinnersAdmin(admin.ModelAdmin):
     list_display = ['id', 'winner_count', 'type', 'round', 'is_processed']
     search_fields = ['round__number']
     list_filter = ['is_processed', 'type']
+    ordering = ['-round__number']

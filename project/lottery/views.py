@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from config.models import GlobalConfig
 from lottery.functions import generate_ticket_number
 from lottery.models import RoundInfo, Ticket, RoundDetail
+from lottery.serializers import BuyTicketSerializer
 from user.models import User
 from user.permissions import IsAuthenticatedPanc
 from wallet.constants import WalletType, TransactionType
@@ -15,6 +16,7 @@ from wallet.models import Wallet, TransactionLog
 
 class BuyTicketView(GenericAPIView):
     permission_classes = [IsAuthenticatedPanc]
+    serializer_class = BuyTicketSerializer
 
     def post(self, request):
         user_id = request.user_id
@@ -22,6 +24,13 @@ class BuyTicketView(GenericAPIView):
 
         if not user:
             return Response(data={'message': 'Bad Request'}, status=400)
+
+        data = request.data if request.data else {}
+        serializer = BuyTicketSerializer(data=data)
+        if not serializer.is_valid():
+            return Response(data={'message': 'Bad Request'}, status=400)
+
+        ticket_count = serializer.validated_data['ticket_count']
 
         round_info_qs = RoundInfo.objects.filter(is_done=False)
         if len(round_info_qs) != 1:
@@ -36,39 +45,42 @@ class BuyTicketView(GenericAPIView):
         if len(wallet_qs) != 1:
             return Response(data={'message': 'Internal server error'}, status=500)
 
-        ticket_number = generate_ticket_number()
-
         with transaction.atomic():
+
             main_wallet_obj = Wallet.objects.filter(wallet_type=WalletType.MAIN,
                                                     flagged_wallet=True).select_for_update().get()
 
             round_info = round_info_qs.select_for_update().first()
 
             wallet_user = wallet_qs.select_for_update().first()
-            if wallet_user.balance < round_info.ticket_amount:
+            if wallet_user.balance < round_info.ticket_amount * ticket_count:
+                print(wallet_user.balance , round_info.ticket_amount * ticket_count)
                 return Response(data={'message': 'Bad Request'}, status=400)
 
-            round_info.ticket_count += 1
-            round_info.total_price += round_info.ticket_amount
-            round_info.burn_amount += (
-                    round_info.ticket_amount * decimal.Decimal(str(float(burn_ratio_obj.config_value) / 100)))
+            round_info.ticket_count += ticket_count
+            round_info.total_price += (round_info.ticket_amount * ticket_count)
+            round_info.burn_amount += (round_info.ticket_amount * ticket_count) * decimal.Decimal(
+                str(float(burn_ratio_obj.config_value) / 100))
             round_info.save()
 
-            wallet_user.balance -= round_info.ticket_amount
+            wallet_user.balance -= (round_info.ticket_amount * ticket_count)
             wallet_user.save()
 
-            main_wallet_obj.balance += round_info.ticket_amount
+            main_wallet_obj.balance += (round_info.ticket_amount * ticket_count)
             main_wallet_obj.save()
 
-            Ticket.objects.create(round=round_info, user=user, number=ticket_number)
-
-            TransactionLog.objects.create(wallet=wallet_user, amount=-round_info.ticket_amount,
+            TransactionLog.objects.create(wallet=wallet_user, amount=-(round_info.ticket_amount * ticket_count),
                                           transaction_type=TransactionType.LOTTERY)
 
-            TransactionLog.objects.create(wallet=main_wallet_obj, amount=+round_info.ticket_amount,
+            TransactionLog.objects.create(wallet=main_wallet_obj, amount=+(round_info.ticket_amount * ticket_count),
                                           transaction_type=TransactionType.LOTTERY)
+            ticket_list = []
+            for _ in range(ticket_count):
+                ticket_number = generate_ticket_number()
+                ticket_list.append(ticket_number)
+                Ticket.objects.create(round=round_info, user=user, number=ticket_number)
 
-        data = {'ticket_number': ticket_number, 'ticket_amount': round_info.ticket_amount}
+        data = {'ticket_list': ticket_list, 'total_ticket_amount': (round_info.ticket_amount * ticket_count)}
 
         return Response(data={'message': 'OK', 'data': data}, status=200)
 

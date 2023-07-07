@@ -1,7 +1,6 @@
 import decimal
 
 from django.conf import settings
-from django.db import transaction
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from web3 import Web3
@@ -12,7 +11,7 @@ from user.permissions import IsAuthenticatedPanc
 from utils.ex_request import convert_currency_to_usd
 from wallet.constants import WalletType, CurrencyType
 from wallet.models import TransactionLog, Wallet, CashOutRequest, Transaction
-from wallet.serializers import CashoutRequestSerializer, SwapSerializer, ConvertToUSDSerializer, SecondSwapSerializer
+from wallet.serializers import CashoutRequestSerializer, SwapSerializer, ConvertToUSDSerializer
 
 
 class ConvertToUSDView(GenericAPIView):
@@ -32,7 +31,8 @@ class ConvertToUSDView(GenericAPIView):
 
         return Response(
             data={'message': 'OK',
-                  'data': {'price': round(decimal.Decimal(str(balance_from)) * serializer.validated_data['amount'], 10)}},
+                  'data': {
+                      'price': round(decimal.Decimal(str(balance_from)) * serializer.validated_data['amount'], 10)}},
             status=200)
 
 
